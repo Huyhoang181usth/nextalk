@@ -57,6 +57,7 @@ const closeSettingsBtn = document.getElementById('close-settings-btn')!;
 const cameraBtn = document.getElementById('camera-btn')!;
 const cameraOverlay = document.getElementById('camera-overlay')!;
 const closeCameraBtn = document.getElementById('close-camera-btn')!;
+const switchCameraBtn = document.getElementById('switch-camera-btn')!;
 const cameraVideo = document.getElementById('camera-video') as HTMLVideoElement;
 const cameraTimer = document.getElementById('camera-timer')!;
 const modePhotoBtn = document.getElementById('mode-photo-btn')!;
@@ -731,6 +732,7 @@ let cameraMode: 'photo' | 'video' = 'photo';
 let capturedFile: File | null = null;
 let recordTimer: number | null = null;
 let recordSeconds = 0;
+let currentFacingMode: 'user' | 'environment' = 'user';
 
 cameraBtn.addEventListener('click', async () => {
   if (!activeChatUserId) {
@@ -742,12 +744,30 @@ cameraBtn.addEventListener('click', async () => {
 
 closeCameraBtn.addEventListener('click', closeCamera);
 
+switchCameraBtn.addEventListener('click', async () => {
+  currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
+  await openCamera();
+});
+
 async function openCamera() {
   cameraOverlay.classList.remove('hidden');
   resetCameraState();
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: currentFacingMode }, 
+      audio: true 
+    });
     cameraVideo.srcObject = stream;
+    
+    // Apply mirroring for front camera
+    if (currentFacingMode === 'user') {
+      cameraVideo.classList.add('mirrored');
+    } else {
+      cameraVideo.classList.remove('mirrored');
+    }
   } catch (err) {
     showToast('Camera access denied or unavailable', 'error');
     closeCamera();

@@ -887,6 +887,10 @@ button[type="submit"]:active, #auth-submit:active {
   object-fit: contain;
 }
 
+.mirrored {
+  transform: scaleX(-1);
+}
+
 #camera-preview-container {
   position: absolute;
   top: 0;
