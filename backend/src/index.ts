@@ -26,6 +26,11 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.status(200).send('Nextalk Backend is running!');
+});
+
+
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
 const PORT = process.env.PORT || 3000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
