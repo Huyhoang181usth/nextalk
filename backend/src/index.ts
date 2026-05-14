@@ -443,6 +443,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(typeof PORT === 'string' ? parseInt(PORT, 10) : PORT, '0.0.0.0', () => {
   console.log(`Server listening on port ${PORT}`);
 });
