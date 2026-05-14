@@ -1,7 +1,7 @@
 import './style.css';
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://192.168.0.111:3000'; // IP cục bộ của máy tính bạn
 let socket: Socket | null = null;
 let currentUserId: number | null = null;
 let currentUsername: string | null = null;
