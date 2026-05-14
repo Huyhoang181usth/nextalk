@@ -40,7 +40,14 @@ const fileInput = document.getElementById('file-input') as HTMLInputElement;
 const addFriendInput = document.getElementById('add-friend-input') as HTMLInputElement;
 const addFriendBtn = document.getElementById('add-friend-btn')!;
 const toastContainer = document.getElementById('toast-container')!;
+const mobileBackBtn = document.getElementById('mobile-back-btn')!;
+const mainChat = document.querySelector('.main-chat') as HTMLElement;
 
+mobileBackBtn.addEventListener('click', () => {
+  mainChat.classList.remove('mobile-active');
+  activeChatUserId = null;
+  renderUsers();
+});
 // Settings DOM
 const settingsMenuBtn = document.getElementById('settings-menu-btn')!;
 const settingsOverlay = document.getElementById('settings-overlay')!;
@@ -369,6 +376,10 @@ async function showChatScreen() {
 
   if ((window as any).lucide) (window as any).lucide.createIcons();
 
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
   connectSocket();
 
   // Handle pending invite code from URL
@@ -455,6 +466,29 @@ function connectSocket() {
       appendMessage(message);
       scrollToBottom();
     }
+
+    if (message.senderId !== currentUserId) {
+      if (document.hidden || message.senderId !== activeChatUserId) {
+        const sender = users.find(u => u.id === message.senderId);
+        const senderName = sender ? sender.username : 'Someone';
+        
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const notification = new Notification(`New message from ${senderName}`, {
+            body: message.content,
+            icon: sender?.avatarUrl || undefined
+          });
+          
+          notification.onclick = () => {
+            window.focus();
+            if (sender) {
+              selectUser(sender.id, sender.username, sender.avatarUrl);
+            }
+          };
+        } else {
+          showToast(`New message from ${senderName}`);
+        }
+      }
+    }
   });
 }
 
@@ -518,6 +552,7 @@ async function selectUser(userId: number, username: string, avatarUrl?: string) 
   chatHeader.classList.remove('hidden');
   chatInputArea.classList.remove('hidden');
   chatHeaderName.textContent = username;
+  mainChat.classList.add('mobile-active');
 
   if (avatarUrl) {
     chatHeaderAvatarImg.src = avatarUrl;

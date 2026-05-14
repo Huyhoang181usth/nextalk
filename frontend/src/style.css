@@ -828,3 +828,73 @@ button[type="submit"]:active, #auth-submit:active {
   transform: translateY(1px);
   box-shadow: 0 4px 8px rgba(255, 71, 126, 0.2);
 }
+
+/* Mobile Responsive Adjustments */
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  #app {
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  #chat-screen {
+    padding: 0;
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-radius: 0;
+    border: none;
+    transition: transform 0.3s ease;
+  }
+
+  .main-chat {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+    z-index: 20;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: var(--bg-app);
+  }
+
+  .main-chat.mobile-active {
+    transform: translateX(0);
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .chat-header {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  #mobile-back-btn {
+    margin-right: 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+  }
+
+  #mobile-back-btn:hover {
+    background: var(--bg-main);
+  }
+}
