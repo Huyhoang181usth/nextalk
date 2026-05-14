@@ -77,7 +77,7 @@ function init() {
   const storedUserId = localStorage.getItem('userId');
   const storedUsername = localStorage.getItem('username');
   const storedInviteCode = localStorage.getItem('inviteCode');
-  const storedAvatarUrl = localStorage.getItem('avatarUrl');
+  //const storedAvatarUrl = localStorage.getItem('avatarUrl');
 
   if (token && storedUserId && storedUsername) {
     currentUserId = parseInt(storedUserId);
@@ -218,7 +218,7 @@ closeSettingsBtn.addEventListener('click', () => settingsOverlay.classList.add('
 async function openSettings() {
   settingsOverlay.classList.remove('hidden');
   settingsError.textContent = '';
-  
+
   try {
     const token = localStorage.getItem('token');
     const res = await fetch(`${API_URL}/api/users/me`, {
@@ -226,13 +226,13 @@ async function openSettings() {
     });
     if (!res.ok) throw new Error('Failed to fetch profile');
     const data = await res.json();
-    
+
     settingsUsername.value = data.username;
     settingsEmail.value = data.email || '';
     settingsInvite.value = data.inviteCode;
     settingsFriendCount.textContent = data.friendCount.toString();
     settingsJoinedDate.textContent = new Date(data.createdAt).toLocaleDateString();
-    
+
     if (data.avatarUrl) {
       settingsAvatarPreview.src = data.avatarUrl;
       settingsAvatarPreview.style.display = 'block';
@@ -258,21 +258,21 @@ avatarUploadOverlay.addEventListener('click', () => settingsAvatarInput.click())
 settingsAvatarInput.addEventListener('change', async (e) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
-  
+
   const formData = new FormData();
   formData.append('avatar', file);
-  
+
   try {
     const token = localStorage.getItem('token');
     settingsError.textContent = 'Uploading avatar...';
     settingsError.style.color = 'var(--text-muted)';
-    
+
     const res = await fetch(`${API_URL}/api/users/avatar`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData
     });
-    
+
     const data = await res.json();
     if (res.ok) {
       localStorage.setItem('avatarUrl', data.avatarUrl);
@@ -281,7 +281,7 @@ settingsAvatarInput.addEventListener('change', async (e) => {
       settingsAvatarPlaceholder.style.display = 'none';
       settingsError.textContent = '';
       showToast('Avatar updated successfully!');
-      
+
       const currentUserBadge = document.getElementById('current-username')!;
       currentUserBadge.textContent = currentUsername || '';
     } else {
@@ -298,7 +298,7 @@ settingsForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const newUsername = settingsUsername.value.trim();
   if (!newUsername) return;
-  
+
   try {
     const token = localStorage.getItem('token');
     const res = await fetch(`${API_URL}/api/users/me`, {
@@ -309,15 +309,15 @@ settingsForm.addEventListener('submit', async (e) => {
       },
       body: JSON.stringify({ username: newUsername })
     });
-    
+
     const data = await res.json();
     if (res.ok) {
       localStorage.setItem('username', data.username);
       currentUsername = data.username;
-      
+
       const currentUserBadge = document.getElementById('current-username')!;
       currentUserBadge.textContent = currentUsername || '';
-      
+
       showToast('Profile updated successfully!');
       settingsOverlay.classList.add('hidden');
     } else {
