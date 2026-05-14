@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  username         String    @unique
+  passwordHash     String?
+  email            String?   @unique
+  avatarUrl        String?
+  inviteCode       String    @unique @default(uuid())
+  createdAt        DateTime  @default(now())
+  
+  messagesSent     Message[] @relation("SentMessages")
+  messagesReceived Message[] @relation("ReceivedMessages")
+
+  friendshipsInitiated Friendship[] @relation("FriendshipsInitiated")
+  friendshipsReceived  Friendship[] @relation("FriendshipsReceived")
+}
+
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  user1Id   Int
+  user2Id   Int
+  createdAt DateTime @default(now())
+
+  user1     User     @relation("FriendshipsInitiated", fields: [user1Id], references: [id])
+  user2     User     @relation("FriendshipsReceived", fields: [user2Id], references: [id])
+
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  type       String   @default("text")
+  content    String?
+  fileUrl    String?
+  createdAt  DateTime @default(now())
+  
+  senderId   Int
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  
+  receiverId Int
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}

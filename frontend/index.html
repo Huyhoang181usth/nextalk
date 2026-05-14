@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-time Chat App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <div id="toast-container"></div>
+    <div id="app">
+      <!-- Auth Screen -->
+      <div id="auth-screen" class="screen">
+        <div class="card">
+          <div class="auth-icon"><i data-lucide="message-circle" style="width: 48px; height: 48px; color: var(--primary-color);"></i></div>
+          <h1 id="auth-title">Welcome Back!</h1>
+          <p class="subtitle" id="auth-subtitle">Log in to continue chatting</p>
+          <form id="auth-form">
+            <input type="text" id="username" placeholder="Username" required />
+            <input type="password" id="password" placeholder="Password" required />
+            <button type="submit" id="auth-submit">Let's Go!</button>
+          </form>
+          
+          <div class="divider">
+            <span>OR</span>
+          </div>
+          
+          <div id="google-login-btn" class="google-login-wrapper"></div>
+
+          <p class="toggle-auth">
+            <span id="auth-toggle-text">New here?</span> 
+            <a href="#" id="toggle-auth-btn">Create an account</a>
+          </p>
+          <div id="auth-error" class="error-msg"></div>
+        </div>
+      </div>
+
+      <!-- Chat Screen -->
+      <div id="chat-screen" class="screen hidden">
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sidebar-header">
+            <div class="user-profile">
+              <span id="current-username" class="current-user-badge"></span>
+              <div class="profile-actions">
+                <button id="invite-btn" title="Copy Invite Link" class="icon-btn"><i data-lucide="link"></i></button>
+                <button id="logout-btn" title="Logout" class="icon-btn"><i data-lucide="log-out"></i></button>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h2>Friends</h2>
+              <button id="settings-menu-btn" class="icon-btn" title="Settings"><i data-lucide="menu"></i></button>
+            </div>
+          </div>
+          <div class="search-bar">
+            <input type="text" id="add-friend-input" placeholder="Paste invite code..." />
+            <button id="add-friend-btn">Add</button>
+          </div>
+          <ul id="user-list">
+            <!-- Dynamic users will be injected here -->
+          </ul>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main-chat">
+          <div id="chat-header" class="chat-header hidden">
+            <div class="chat-header-info">
+              <img id="chat-header-avatar-img" class="avatar hidden" />
+              <div class="avatar" id="chat-header-avatar"></div>
+              <h3 id="chat-header-name">Select a friend</h3>
+            </div>
+          </div>
+          <div id="chat-messages" class="chat-messages">
+            <div class="empty-state">
+              <div class="empty-icon"><i data-lucide="message-square" style="width: 48px; height: 48px;"></i></div>
+              Select a friend to start chatting
+            </div>
+          </div>
+          <div id="chat-input-area" class="chat-input-area hidden">
+            <form id="chat-form">
+              <button type="button" id="attach-btn" class="attach-btn" title="Attach file"><i data-lucide="paperclip"></i></button>
+              <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.doc,.docx,.zip,.rar" />
+              <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" />
+              <button type="submit" class="send-btn">
+                <i data-lucide="send" style="color: white; width: 20px; height: 20px;"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <!-- Settings Modal Overlay -->
+      <div id="settings-overlay" class="modal-overlay hidden">
+        <div class="settings-modal">
+          <div class="modal-header">
+            <h3>Profile Settings</h3>
+            <button id="close-settings-btn" class="icon-btn"><i data-lucide="x"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="avatar-upload-container">
+              <img id="settings-avatar-preview" src="" class="avatar-large" style="display: none;" />
+              <div id="settings-avatar-placeholder" class="avatar-large">?</div>
+              <div class="avatar-upload-overlay" id="avatar-upload-overlay">
+                <i data-lucide="camera" style="color: white; width: 24px; height: 24px;"></i>
+              </div>
+              <input type="file" id="settings-avatar-input" accept="image/*" style="display: none;" />
+            </div>
+            
+            <form id="settings-form">
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="settings-username" required />
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="text" id="settings-email" readonly disabled placeholder="Not linked" />
+              </div>
+              <div class="form-group">
+                <label>Invite Code</label>
+                <div style="display:flex; gap:0.5rem">
+                  <input type="text" id="settings-invite" readonly disabled />
+                  <button type="button" class="icon-btn" id="copy-settings-invite-btn" title="Copy"><i data-lucide="copy"></i></button>
+                </div>
+              </div>
+              
+              <div class="stats-box">
+                <div class="stat">
+                  <span class="stat-value" id="settings-friend-count">0</span>
+                  <span class="stat-label">Friends</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value" id="settings-joined-date">-</span>
+                  <span class="stat-label">Joined</span>
+                </div>
+              </div>
+              
+              <div id="settings-error" class="error-msg" style="text-align: center; margin-bottom: 1rem;"></div>
+              <button type="submit" id="settings-save-btn" class="primary-btn w-100">Save Changes</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
