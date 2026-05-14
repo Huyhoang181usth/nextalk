@@ -475,23 +475,21 @@ function connectSocket() {
   });
 
   socket.on('new_message', (message) => {
-    // If message is for the currently active chat
-    if (
-      (message.senderId === activeChatUserId && message.receiverId === currentUserId) ||
-      (message.senderId === currentUserId && message.receiverId === activeChatUserId)
-    ) {
-      appendMessage(message);
-      scrollToBottom();
-    }
-
+    // Only process incoming messages (skip our own to avoid duplicates with optimistic UI)
     if (message.senderId !== currentUserId) {
+      // If message is for the currently active chat
+      if (message.senderId === activeChatUserId && message.receiverId === currentUserId) {
+        appendMessage(message);
+        scrollToBottom();
+      }
+
       if (document.hidden || message.senderId !== activeChatUserId) {
         const sender = users.find(u => u.id === message.senderId);
         const senderName = sender ? sender.username : 'Someone';
         
         if ('Notification' in window && Notification.permission === 'granted') {
           const notification = new Notification(`New message from ${senderName}`, {
-            body: message.content,
+            body: message.type === 'image' || message.type === 'video' ? `Sent an attachment` : message.content,
             icon: sender?.avatarUrl || undefined
           });
           
@@ -610,6 +608,17 @@ chatForm.addEventListener('submit', (e) => {
   const content = messageInput.value.trim();
   if (!content || !activeChatUserId || !socket) return;
 
+  // Optimistic UI Update (Instant send)
+  appendMessage({
+    id: `temp_${Date.now()}`,
+    senderId: currentUserId,
+    receiverId: activeChatUserId,
+    content,
+    type: 'text',
+    createdAt: new Date().toISOString()
+  });
+  scrollToBottom();
+
   socket.emit('private_message', {
     receiverId: activeChatUserId,
     content
@@ -650,6 +659,9 @@ fileInput.addEventListener('change', async (e) => {
 
     if (res.ok) {
       showToast('Uploaded successfully', 'success');
+      const uploadedMsg = await res.json();
+      appendMessage(uploadedMsg);
+      scrollToBottom();
     } else {
       const data = await res.json();
       showToast(data.error || 'Failed to upload', 'error');
@@ -919,6 +931,9 @@ sendMediaBtn.addEventListener('click', async () => {
 
     if (res.ok) {
       showToast('Media sent successfully', 'success');
+      const uploadedMsg = await res.json();
+      appendMessage(uploadedMsg);
+      scrollToBottom();
       closeCamera();
     } else {
       showToast('Failed to send media', 'error');
