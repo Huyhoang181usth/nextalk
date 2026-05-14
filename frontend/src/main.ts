@@ -686,7 +686,10 @@ function appendMessage(message: any) {
 
   let mediaContent = '';
   if (message.type === 'image' && message.fileUrl) {
-    mediaContent = `<img src="${API_URL}${message.fileUrl}" class="message-image" alt="Attachment" />`;
+    const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='150' height='150' fill='%23e2e8f0'/><text x='75' y='75' font-family='sans-serif' font-size='14' fill='%2364748b' text-anchor='middle' dy='5'>Image Expired</text></svg>`;
+    mediaContent = `<img src="${API_URL}${message.fileUrl}" class="message-image" alt="Attachment" onerror="this.onerror=null; this.src='${fallbackSvg}';" />`;
+  } else if (message.type === 'video' && message.fileUrl) {
+    mediaContent = `<video src="${API_URL}${message.fileUrl}" class="message-video" controls style="max-width: 100%; border-radius: var(--radius-sm); margin-bottom: 5px;"></video>`;
   } else if (message.type === 'file' && message.fileUrl) {
     mediaContent = `
       <a href="${API_URL}${message.fileUrl}" target="_blank" class="message-file">

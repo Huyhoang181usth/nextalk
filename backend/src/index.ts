@@ -331,7 +331,8 @@ app.post('/api/messages/upload', authenticateAPI, upload.single('file'), async (
     }
 
     const isImage = file.mimetype.startsWith('image/');
-    const type = isImage ? 'image' : 'file';
+    const isVideo = file.mimetype.startsWith('video/');
+    const type = isImage ? 'image' : (isVideo ? 'video' : 'file');
     const fileUrl = `/uploads/${file.filename}`;
 
     const message = await prisma.message.create({
