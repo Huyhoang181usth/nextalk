@@ -7,7 +7,6 @@ let currentUserId: number | null = null;
 let currentUsername: string | null = null;
 let activeChatUserId: number | null = null;
 let myInviteCode: string | null = null;
-let myAvatarUrl: string | null = null;
 let users: { id: number; username: string; status: 'online' | 'offline'; avatarUrl?: string }[] = [];
 
 // DOM Elements
@@ -84,7 +83,6 @@ function init() {
     currentUserId = parseInt(storedUserId);
     currentUsername = storedUsername;
     myInviteCode = storedInviteCode;
-    myAvatarUrl = storedAvatarUrl;
     showChatScreen();
   } else {
     showAuthScreen();
@@ -120,7 +118,6 @@ function init() {
     currentUserId = data.userId;
     currentUsername = data.username;
     myInviteCode = data.inviteCode;
-    myAvatarUrl = data.avatarUrl;
 
     showChatScreen();
   } catch (err) {
@@ -279,7 +276,6 @@ settingsAvatarInput.addEventListener('change', async (e) => {
     const data = await res.json();
     if (res.ok) {
       localStorage.setItem('avatarUrl', data.avatarUrl);
-      myAvatarUrl = data.avatarUrl;
       settingsAvatarPreview.src = data.avatarUrl;
       settingsAvatarPreview.style.display = 'block';
       settingsAvatarPlaceholder.style.display = 'none';
@@ -656,14 +652,15 @@ function scrollToBottom() {
 
 // Google Init
 function initGoogle() {
-  if (window.google && window.google.accounts) {
-    window.google.accounts.id.initialize({
+  const win = window as any;
+  if (win.google && win.google.accounts) {
+    win.google.accounts.id.initialize({
       client_id: "807355852605-dkha07kak1spvfrd1nicibqilh5p3aau.apps.googleusercontent.com",
-      callback: (window as any).handleGoogleLogin
+      callback: win.handleGoogleLogin
     });
     const googleBtn = document.getElementById("google-login-btn");
     if (googleBtn) {
-      window.google.accounts.id.renderButton(
+      win.google.accounts.id.renderButton(
         googleBtn,
         { theme: "outline", size: "large", type: "standard", text: "signin_with" }
       );
