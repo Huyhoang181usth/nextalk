@@ -84,6 +84,7 @@
           </div>
           <div id="chat-input-area" class="chat-input-area hidden">
             <form id="chat-form">
+              <button type="button" id="camera-btn" class="attach-btn" title="Open camera"><i data-lucide="camera"></i></button>
               <button type="button" id="attach-btn" class="attach-btn" title="Attach file"><i data-lucide="paperclip"></i></button>
               <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.doc,.docx,.zip,.rar" />
               <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" />
@@ -146,6 +147,40 @@
         </div>
       </div>
     </div>
+    <!-- Camera Modal Overlay -->
+    <div id="camera-overlay" class="modal-overlay hidden">
+      <div class="camera-modal">
+        <div class="camera-header">
+          <button id="close-camera-btn" class="icon-btn"><i data-lucide="x"></i></button>
+          <div class="camera-timer hidden" id="camera-timer">00:00</div>
+        </div>
+        
+        <div class="camera-view">
+          <video id="camera-video" autoplay playsinline></video>
+          
+          <!-- Preview mode container -->
+          <div id="camera-preview-container" class="hidden">
+            <img id="photo-preview" class="hidden" />
+            <video id="video-preview" controls class="hidden"></video>
+            <div class="preview-actions">
+              <button id="retake-media-btn" class="secondary-btn"><i data-lucide="refresh-cw"></i> Retake</button>
+              <button id="send-media-btn" class="primary-btn"><i data-lucide="send"></i> Send</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="camera-controls" id="camera-controls">
+          <div class="camera-mode-toggle">
+            <button id="mode-photo-btn" class="active">Photo</button>
+            <button id="mode-video-btn">Video</button>
+          </div>
+          <button id="capture-media-btn" class="shutter-btn photo-mode"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

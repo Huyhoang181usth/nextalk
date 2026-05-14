@@ -829,6 +829,150 @@ button[type="submit"]:active, #auth-submit:active {
   box-shadow: 0 4px 8px rgba(255, 71, 126, 0.2);
 }
 
+/* Camera Modal */
+.camera-modal {
+  background: #000;
+  width: 100%;
+  height: 100%;
+  max-width: 600px;
+  max-height: 800px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.camera-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 30;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+}
+
+.camera-header .icon-btn {
+  color: white;
+}
+
+.camera-timer {
+  color: white;
+  font-weight: 700;
+  background: rgba(239, 35, 60, 0.8);
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 1.1rem;
+}
+
+.camera-view {
+  flex: 1;
+  position: relative;
+  background: #111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#camera-video,
+#photo-preview,
+#video-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#camera-preview-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-actions {
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0 2rem;
+}
+
+.camera-controls {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background: #000;
+  z-index: 20;
+}
+
+.camera-mode-toggle {
+  display: flex;
+  background: rgba(255,255,255,0.2);
+  border-radius: 30px;
+  padding: 4px;
+}
+
+.camera-mode-toggle button {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.camera-mode-toggle button.active {
+  background: rgba(255,255,255,0.3);
+}
+
+.shutter-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 4px solid white;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.shutter-btn.photo-mode {
+  background: white;
+}
+
+.shutter-btn.photo-mode:active {
+  transform: scale(0.9);
+  background: #e0e0e0;
+}
+
+.shutter-btn.video-mode {
+  background: var(--danger);
+  border-color: white;
+}
+
+.shutter-btn.recording {
+  border-radius: 10px;
+  transform: scale(0.6);
+  background: var(--danger);
+}
+
 /* Mobile Responsive Adjustments */
 .mobile-only {
   display: none !important;

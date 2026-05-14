@@ -52,6 +52,22 @@ mobileBackBtn.addEventListener('click', () => {
 const settingsMenuBtn = document.getElementById('settings-menu-btn')!;
 const settingsOverlay = document.getElementById('settings-overlay')!;
 const closeSettingsBtn = document.getElementById('close-settings-btn')!;
+
+// Camera DOM
+const cameraBtn = document.getElementById('camera-btn')!;
+const cameraOverlay = document.getElementById('camera-overlay')!;
+const closeCameraBtn = document.getElementById('close-camera-btn')!;
+const cameraVideo = document.getElementById('camera-video') as HTMLVideoElement;
+const cameraTimer = document.getElementById('camera-timer')!;
+const modePhotoBtn = document.getElementById('mode-photo-btn')!;
+const modeVideoBtn = document.getElementById('mode-video-btn')!;
+const captureMediaBtn = document.getElementById('capture-media-btn')!;
+
+const cameraPreviewContainer = document.getElementById('camera-preview-container')!;
+const photoPreview = document.getElementById('photo-preview') as HTMLImageElement;
+const videoPreview = document.getElementById('video-preview') as HTMLVideoElement;
+const retakeMediaBtn = document.getElementById('retake-media-btn') as HTMLButtonElement;
+const sendMediaBtn = document.getElementById('send-media-btn') as HTMLButtonElement;
 const settingsForm = document.getElementById('settings-form') as HTMLFormElement;
 const settingsUsername = document.getElementById('settings-username') as HTMLInputElement;
 const settingsEmail = document.getElementById('settings-email') as HTMLInputElement;
@@ -704,6 +720,195 @@ function initGoogle() {
     setTimeout(initGoogle, 100);
   }
 }
+// ==========================================
+// Camera Logic
+// ==========================================
+let stream: MediaStream | null = null;
+let mediaRecorder: MediaRecorder | null = null;
+let recordedChunks: BlobPart[] = [];
+let isRecording = false;
+let cameraMode: 'photo' | 'video' = 'photo';
+let capturedFile: File | null = null;
+let recordTimer: number | null = null;
+let recordSeconds = 0;
+
+cameraBtn.addEventListener('click', async () => {
+  if (!activeChatUserId) {
+    showToast('Select a friend first', 'error');
+    return;
+  }
+  await openCamera();
+});
+
+closeCameraBtn.addEventListener('click', closeCamera);
+
+async function openCamera() {
+  cameraOverlay.classList.remove('hidden');
+  resetCameraState();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    cameraVideo.srcObject = stream;
+  } catch (err) {
+    showToast('Camera access denied or unavailable', 'error');
+    closeCamera();
+  }
+}
+
+function closeCamera() {
+  cameraOverlay.classList.add('hidden');
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+  if (isRecording) {
+    stopRecording();
+  }
+}
+
+function resetCameraState() {
+  cameraVideo.classList.remove('hidden');
+  cameraPreviewContainer.classList.add('hidden');
+  photoPreview.classList.add('hidden');
+  videoPreview.classList.add('hidden');
+  document.getElementById('camera-controls')!.classList.remove('hidden');
+  capturedFile = null;
+  recordedChunks = [];
+}
+
+modePhotoBtn.addEventListener('click', () => {
+  if (isRecording) return;
+  cameraMode = 'photo';
+  modePhotoBtn.classList.add('active');
+  modeVideoBtn.classList.remove('active');
+  captureMediaBtn.className = 'shutter-btn photo-mode';
+});
+
+modeVideoBtn.addEventListener('click', () => {
+  if (isRecording) return;
+  cameraMode = 'video';
+  modeVideoBtn.classList.add('active');
+  modePhotoBtn.classList.remove('active');
+  captureMediaBtn.className = 'shutter-btn video-mode';
+});
+
+captureMediaBtn.addEventListener('click', () => {
+  if (cameraMode === 'photo') {
+    takePhoto();
+  } else {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }
+});
+
+function takePhoto() {
+  const canvas = document.createElement('canvas');
+  canvas.width = cameraVideo.videoWidth;
+  canvas.height = cameraVideo.videoHeight;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (blob) {
+        capturedFile = new File([blob], `capture-${Date.now()}.png`, { type: 'image/png' });
+        showPreview('photo', URL.createObjectURL(blob));
+      }
+    }, 'image/png');
+  }
+}
+
+function startRecording() {
+  if (!stream) return;
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.ondataavailable = e => {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    capturedFile = new File([blob], `video-${Date.now()}.webm`, { type: 'video/webm' });
+    showPreview('video', URL.createObjectURL(blob));
+  };
+  mediaRecorder.start();
+  isRecording = true;
+  captureMediaBtn.classList.add('recording');
+  
+  // Timer
+  recordSeconds = 0;
+  cameraTimer.textContent = '00:00';
+  cameraTimer.classList.remove('hidden');
+  recordTimer = setInterval(() => {
+    recordSeconds++;
+    const m = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+    const s = String(recordSeconds % 60).padStart(2, '0');
+    cameraTimer.textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+  }
+  isRecording = false;
+  captureMediaBtn.classList.remove('recording');
+  if (recordTimer) clearInterval(recordTimer);
+  cameraTimer.classList.add('hidden');
+}
+
+function showPreview(type: 'photo' | 'video', url: string) {
+  cameraVideo.classList.add('hidden');
+  document.getElementById('camera-controls')!.classList.add('hidden');
+  cameraPreviewContainer.classList.remove('hidden');
+  
+  if (type === 'photo') {
+    photoPreview.src = url;
+    photoPreview.classList.remove('hidden');
+    videoPreview.classList.add('hidden');
+  } else {
+    videoPreview.src = url;
+    videoPreview.classList.remove('hidden');
+    photoPreview.classList.add('hidden');
+  }
+}
+
+retakeMediaBtn.addEventListener('click', () => {
+  resetCameraState();
+});
+
+sendMediaBtn.addEventListener('click', async () => {
+  if (!capturedFile || !activeChatUserId) return;
+  
+  const formData = new FormData();
+  formData.append('file', capturedFile);
+  formData.append('receiverId', activeChatUserId.toString());
+
+  try {
+    const token = localStorage.getItem('token');
+    showToast('Sending media...', 'success');
+    sendMediaBtn.disabled = true;
+
+    const res = await fetch(`${API_URL}/api/messages/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (res.ok) {
+      showToast('Media sent successfully', 'success');
+      closeCamera();
+    } else {
+      showToast('Failed to send media', 'error');
+    }
+  } catch (err) {
+    showToast('Network error during upload', 'error');
+  } finally {
+    sendMediaBtn.disabled = false;
+  }
+});
 
 // Startup
 init();
