@@ -7,6 +7,10 @@
     <title>Real-time Chat App</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
@@ -74,6 +78,10 @@
               <img id="chat-header-avatar-img" class="avatar hidden" />
               <div class="avatar" id="chat-header-avatar"></div>
               <h3 id="chat-header-name">Select a friend</h3>
+            </div>
+            <div class="header-actions">
+              <button id="voice-call-btn" class="icon-btn" title="Voice Call"><i data-lucide="phone"></i></button>
+              <button id="video-call-btn" class="icon-btn" title="Video Call"><i data-lucide="video"></i></button>
             </div>
           </div>
           <div id="chat-messages" class="chat-messages">
@@ -180,7 +188,39 @@
       </div>
     </div>
 
+    <!-- Calling Modal Overlay -->
+    <div id="call-overlay" class="modal-overlay hidden">
+      <div class="call-modal">
+        <div class="call-info">
+          <div class="call-avatar" id="call-avatar">?</div>
+          <h2 id="call-name">Calling...</h2>
+          <p id="call-status">Connecting...</p>
+        </div>
+        <div class="call-video-container">
+          <video id="remote-video" autoplay playsinline class="hidden"></video>
+          <video id="local-video" autoplay playsinline muted class="hidden"></video>
+        </div>
+        <div class="call-actions">
+          <button id="toggle-mic-btn" class="icon-btn call-btn"><i data-lucide="mic"></i></button>
+          <button id="toggle-video-btn" class="icon-btn call-btn"><i data-lucide="video"></i></button>
+          <button id="end-call-btn" class="icon-btn call-btn hangup-btn"><i data-lucide="phone-off"></i></button>
+          <button id="accept-call-btn" class="icon-btn call-btn accept-btn hidden"><i data-lucide="phone"></i></button>
+        </div>
+      </div>
+    </div>
+
     <!-- Scripts -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('SW registered');
+          }).catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+        });
+      }
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>

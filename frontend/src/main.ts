@@ -88,8 +88,34 @@ const avatarUploadOverlay = document.getElementById('avatar-upload-overlay')!;
 const settingsAvatarPreview = document.getElementById('settings-avatar-preview') as HTMLImageElement;
 const settingsAvatarPlaceholder = document.getElementById('settings-avatar-placeholder')!;
 
+// Calling DOM
+const voiceCallBtn = document.getElementById('voice-call-btn')!;
+const videoCallBtn = document.getElementById('video-call-btn')!;
+const callOverlay = document.getElementById('call-overlay')!;
+const callAvatar = document.getElementById('call-avatar')!;
+const callName = document.getElementById('call-name')!;
+const callStatus = document.getElementById('call-status')!;
+const localVideo = document.getElementById('local-video') as HTMLVideoElement;
+const remoteVideo = document.getElementById('remote-video') as HTMLVideoElement;
+const toggleMicBtn = document.getElementById('toggle-mic-btn')!;
+const toggleVideoBtn = document.getElementById('toggle-video-btn')!;
+const endCallBtn = document.getElementById('end-call-btn')!;
+const acceptCallBtn = document.getElementById('accept-call-btn')!;
+
 let isLoginMode = true;
 let pendingInviteCode: string | null = null;
+
+// WebRTC State
+let peerConnection: RTCPeerConnection | null = null;
+let localStream: MediaStream | null = null;
+let isVideoCall = false;
+let callTargetId: number | null = null;
+const configuration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]
+};
 
 // Initialize
 function init() {
@@ -510,6 +536,53 @@ function connectSocket() {
         }
       }
     }
+  });
+
+  // --- Calling Listeners ---
+  
+  socket.on('incoming_call', ({ from, fromName, type }) => {
+    callTargetId = from;
+    isVideoCall = type === 'video';
+    
+    callOverlay.classList.remove('hidden');
+    callName.textContent = fromName;
+    callStatus.textContent = `Incoming ${type} call...`;
+    callAvatar.textContent = fromName.charAt(0).toUpperCase();
+    
+    acceptCallBtn.classList.remove('hidden');
+    // Change hangup button style
+    endCallBtn.classList.add('hangup-btn');
+  });
+
+  socket.on('call_answered', async ({ accepted }) => {
+    if (accepted) {
+      callStatus.textContent = 'Call connected';
+      acceptCallBtn.classList.add('hidden');
+      await startWebRTC(true); // true means we are the initiator
+    } else {
+      showToast('Call rejected', 'error');
+      closeCall();
+    }
+  });
+
+  socket.on('webrtc_signal', async ({ from, signal }) => {
+    if (!peerConnection) await startWebRTC(false);
+    
+    if (signal.sdp) {
+      await peerConnection!.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+      if (signal.sdp.type === 'offer') {
+        const answer = await peerConnection!.createAnswer();
+        await peerConnection!.setLocalDescription(answer);
+        socket!.emit('webrtc_signal', { to: from, signal: { sdp: answer } });
+      }
+    } else if (signal.candidate) {
+      await peerConnection!.addIceCandidate(new RTCIceCandidate(signal.candidate));
+    }
+  });
+
+  socket.on('call_ended', () => {
+    showToast('Call ended');
+    closeCall(false);
   });
 }
 
@@ -951,6 +1024,125 @@ sendMediaBtn.addEventListener('click', async () => {
     showToast('Network error during upload', 'error');
   } finally {
     sendMediaBtn.disabled = false;
+  }
+// --- Calling Logic ---
+
+voiceCallBtn.addEventListener('click', () => startCall('voice'));
+videoCallBtn.addEventListener('click', () => startCall('video'));
+
+async function startCall(type: 'voice' | 'video') {
+  if (!activeChatUserId || !socket) return;
+  
+  callTargetId = activeChatUserId;
+  isVideoCall = type === 'video';
+  
+  callOverlay.classList.remove('hidden');
+  callName.textContent = chatHeaderName.textContent;
+  callStatus.textContent = 'Calling...';
+  acceptCallBtn.classList.add('hidden');
+  
+  socket.emit('call_user', {
+    to: callTargetId,
+    fromName: currentUsername,
+    type
+  });
+}
+
+acceptCallBtn.addEventListener('click', () => {
+  if (!callTargetId || !socket) return;
+  socket.emit('call_response', { to: callTargetId, accepted: true });
+  callStatus.textContent = 'Connecting...';
+  acceptCallBtn.classList.add('hidden');
+});
+
+endCallBtn.addEventListener('click', () => {
+  if (callTargetId && socket) {
+    socket.emit('end_call', { to: callTargetId });
+  }
+  closeCall();
+});
+
+async function startWebRTC(isInitiator: boolean) {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: isVideoCall
+    });
+    
+    if (isVideoCall) {
+      localVideo.srcObject = localStream;
+      localVideo.classList.remove('hidden');
+    }
+
+    peerConnection = new RTCPeerConnection(configuration);
+    
+    localStream.getTracks().forEach(track => {
+      peerConnection!.addTrack(track, localStream!);
+    });
+
+    peerConnection.ontrack = (event) => {
+      remoteVideo.srcObject = event.streams[0];
+      remoteVideo.classList.remove('hidden');
+      if (isVideoCall) {
+        callAvatar.classList.add('hidden');
+      }
+    };
+
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate && callTargetId) {
+        socket!.emit('webrtc_signal', { to: callTargetId, signal: { candidate: event.candidate } });
+      }
+    };
+
+    if (isInitiator) {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket!.emit('webrtc_signal', { to: callTargetId, signal: { sdp: offer } });
+    }
+  } catch (err) {
+    console.error('WebRTC error:', err);
+    showToast('Could not access camera/mic', 'error');
+    closeCall();
+  }
+}
+
+function closeCall(notify = true) {
+  if (notify && callTargetId && socket) {
+    socket.emit('end_call', { to: callTargetId });
+  }
+  
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+  }
+  
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+  
+  callOverlay.classList.add('hidden');
+  localVideo.classList.add('hidden');
+  remoteVideo.classList.add('hidden');
+  callAvatar.classList.remove('hidden');
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+  callTargetId = null;
+}
+
+toggleMicBtn.addEventListener('click', () => {
+  if (localStream) {
+    const audioTrack = localStream.getAudioTracks()[0];
+    audioTrack.enabled = !audioTrack.enabled;
+    toggleMicBtn.classList.toggle('muted', !audioTrack.enabled);
+  }
+});
+
+toggleVideoBtn.addEventListener('click', () => {
+  if (localStream && isVideoCall) {
+    const videoTrack = localStream.getVideoTracks()[0];
+    videoTrack.enabled = !videoTrack.enabled;
+    toggleVideoBtn.classList.toggle('muted', !videoTrack.enabled);
   }
 });
 

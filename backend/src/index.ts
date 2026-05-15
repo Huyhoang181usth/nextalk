@@ -444,6 +444,43 @@ io.on('connection', (socket) => {
     }
   });
 
+  // --- WEBRTC SIGNALING ---
+  
+  socket.on('call_user', ({ to, fromName, type }) => {
+    const targetSocketId = connectedUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('incoming_call', {
+        from: user.userId,
+        fromName,
+        type // 'voice' or 'video'
+      });
+    }
+  });
+
+  socket.on('call_response', ({ to, accepted }) => {
+    const targetSocketId = connectedUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('call_answered', { accepted });
+    }
+  });
+
+  socket.on('webrtc_signal', ({ to, signal }) => {
+    const targetSocketId = connectedUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('webrtc_signal', {
+        from: user.userId,
+        signal
+      });
+    }
+  });
+
+  socket.on('end_call', ({ to }) => {
+    const targetSocketId = connectedUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('call_ended');
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${user.username}`);
     connectedUsers.delete(user.userId);
