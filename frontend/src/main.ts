@@ -1084,10 +1084,23 @@ endCallBtn.addEventListener('click', () => {
 
 async function startWebRTC(isInitiator: boolean) {
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: isVideoCall
-    });
+    // Advanced audio constraints for noise and echo reduction
+    const streamConstraints = {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleSize: 16,
+        channelCount: 1
+      },
+      video: isVideoCall ? {
+        facingMode: 'user',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      } : false
+    };
+
+    localStream = await navigator.mediaDevices.getUserMedia(streamConstraints);
     
     if (isVideoCall) {
       localVideo.srcObject = localStream;
@@ -1185,20 +1198,35 @@ function stopCallTimer() {
 toggleMicBtn.addEventListener('click', () => {
   if (localStream) {
     const audioTrack = localStream.getAudioTracks()[0];
-    audioTrack.enabled = !audioTrack.enabled;
-    toggleMicBtn.classList.toggle('muted', !audioTrack.enabled);
-    toggleMicBtn.innerHTML = audioTrack.enabled ? '<i data-lucide="mic"></i>' : '<i data-lucide="mic-off"></i>';
-    if ((window as any).lucide) (window as any).lucide.createIcons();
+    if (audioTrack) {
+      audioTrack.enabled = !audioTrack.enabled;
+      
+      // Update UI
+      toggleMicBtn.classList.toggle('muted', !audioTrack.enabled);
+      toggleMicBtn.innerHTML = audioTrack.enabled ? '<i data-lucide="mic"></i>' : '<i data-lucide="mic-off"></i>';
+      if ((window as any).lucide) (window as any).lucide.createIcons();
+      
+      showToast(audioTrack.enabled ? 'Microphone on' : 'Microphone muted', 'success');
+    }
   }
 });
 
 toggleVideoBtn.addEventListener('click', () => {
   if (localStream && isVideoCall) {
     const videoTrack = localStream.getVideoTracks()[0];
-    videoTrack.enabled = !videoTrack.enabled;
-    toggleVideoBtn.classList.toggle('muted', !videoTrack.enabled);
-    toggleVideoBtn.innerHTML = videoTrack.enabled ? '<i data-lucide="video"></i>' : '<i data-lucide="video-off"></i>';
-    if ((window as any).lucide) (window as any).lucide.createIcons();
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
+      
+      // Update UI
+      toggleVideoBtn.classList.toggle('muted', !videoTrack.enabled);
+      toggleVideoBtn.innerHTML = videoTrack.enabled ? '<i data-lucide="video"></i>' : '<i data-lucide="video-off"></i>';
+      if ((window as any).lucide) (window as any).lucide.createIcons();
+
+      // Toggle local video preview visibility
+      localVideo.style.opacity = videoTrack.enabled ? '1' : '0.2';
+      
+      showToast(videoTrack.enabled ? 'Camera on' : 'Camera off', 'success');
+    }
   }
 });
 
