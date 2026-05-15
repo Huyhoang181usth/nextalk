@@ -2,6 +2,12 @@ import './style.css';
 import { io, Socket } from 'socket.io-client';
 
 const API_URL = 'https://nextalk-production-ace7.up.railway.app'; // IP cục bộ của máy tính bạn
+
+function formatUrl(url: string | undefined | null) {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${API_URL}${url}`;
+}
 let socket: Socket | null = null;
 let currentUserId: number | null = null;
 let currentUsername: string | null = null;
@@ -258,7 +264,7 @@ async function openSettings() {
     settingsJoinedDate.textContent = new Date(data.createdAt).toLocaleDateString();
 
     if (data.avatarUrl) {
-      settingsAvatarPreview.src = data.avatarUrl;
+      settingsAvatarPreview.src = formatUrl(data.avatarUrl);
       settingsAvatarPreview.style.display = 'block';
       settingsAvatarPlaceholder.style.display = 'none';
     } else {
@@ -300,7 +306,7 @@ settingsAvatarInput.addEventListener('change', async (e) => {
     const data = await res.json();
     if (res.ok) {
       localStorage.setItem('avatarUrl', data.avatarUrl);
-      settingsAvatarPreview.src = data.avatarUrl;
+      settingsAvatarPreview.src = formatUrl(data.avatarUrl);
       settingsAvatarPreview.style.display = 'block';
       settingsAvatarPlaceholder.style.display = 'none';
       settingsError.textContent = '';
@@ -544,7 +550,7 @@ function renderUsers() {
 
     let avatarHtml = `<div class="avatar">${user.username.charAt(0).toUpperCase()}</div>`;
     if (user.avatarUrl) {
-      avatarHtml = `<img src="${user.avatarUrl}" class="avatar" style="object-fit: cover;" />`;
+      avatarHtml = `<img src="${formatUrl(user.avatarUrl)}" class="avatar" style="object-fit: cover;" />`;
     }
 
     li.innerHTML = `
@@ -570,7 +576,7 @@ async function selectUser(userId: number, username: string, avatarUrl?: string) 
   mainChat.classList.add('mobile-active');
 
   if (avatarUrl) {
-    chatHeaderAvatarImg.src = avatarUrl;
+    chatHeaderAvatarImg.src = formatUrl(avatarUrl);
     chatHeaderAvatarImg.classList.remove('hidden');
     chatHeaderAvatar.classList.add('hidden');
   } else {
@@ -687,12 +693,12 @@ function appendMessage(message: any) {
   let mediaContent = '';
   if (message.type === 'image' && message.fileUrl) {
     const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='150' height='150' fill='%23e2e8f0'/><text x='75' y='75' font-family='sans-serif' font-size='14' fill='%2364748b' text-anchor='middle' dy='5'>Image Expired</text></svg>`;
-    mediaContent = `<img src="${API_URL}${message.fileUrl}" class="message-image" alt="Attachment" onerror="this.onerror=null; this.src='${fallbackSvg}';" />`;
+    mediaContent = `<img src="${formatUrl(message.fileUrl)}" class="message-image" alt="Attachment" onerror="this.onerror=null; this.src='${fallbackSvg}';" />`;
   } else if (message.type === 'video' && message.fileUrl) {
-    mediaContent = `<video src="${API_URL}${message.fileUrl}" class="message-video" controls style="max-width: 100%; border-radius: var(--radius-sm); margin-bottom: 5px;"></video>`;
+    mediaContent = `<video src="${formatUrl(message.fileUrl)}" class="message-video" controls style="max-width: 100%; border-radius: var(--radius-sm); margin-bottom: 5px;"></video>`;
   } else if (message.type === 'file' && message.fileUrl) {
     mediaContent = `
-      <a href="${API_URL}${message.fileUrl}" target="_blank" class="message-file">
+      <a href="${formatUrl(message.fileUrl)}" target="_blank" class="message-file">
         <i data-lucide="file-text" class="message-file-icon"></i>
         <span>${message.content || 'Download File'}</span>
       </a>`;

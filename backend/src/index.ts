@@ -10,6 +10,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { OAuth2Client } from 'google-auth-library';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 dotenv.config();
 
@@ -36,21 +38,21 @@ const PORT = process.env.PORT || 3000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-app.use('/uploads', express.static(uploadsDir));
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'nextalk_uploads',
+    resource_type: 'auto',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'zip', 'rar', 'webm', 'mp4'],
+  } as any,
+});
+
 const upload = multer({ storage });
 
 // -- REST API ENDPOINTS --
@@ -266,7 +268,7 @@ app.post('/api/users/avatar', authenticateAPI, upload.single('avatar'), async (r
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const currentUserId = req.user.userId;
-    const avatarUrl = `/uploads/${req.file.filename}`;
+    const avatarUrl = req.file.path; // Cloudinary absolute URL
     
     const updatedUser = await prisma.user.update({
       where: { id: currentUserId },
@@ -333,7 +335,7 @@ app.post('/api/messages/upload', authenticateAPI, upload.single('file'), async (
     const isImage = file.mimetype.startsWith('image/');
     const isVideo = file.mimetype.startsWith('video/');
     const type = isImage ? 'image' : (isVideo ? 'video' : 'file');
-    const fileUrl = `/uploads/${file.filename}`;
+    const fileUrl = file.path; // Cloudinary absolute URL
 
     const message = await prisma.message.create({
       data: {

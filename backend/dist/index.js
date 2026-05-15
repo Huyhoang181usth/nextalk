@@ -21,9 +21,9 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const multer_1 = __importDefault(require("multer"));
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
 const google_auth_library_1 = require("google-auth-library");
+const cloudinary_1 = require("cloudinary");
+const multer_storage_cloudinary_1 = require("multer-storage-cloudinary");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
@@ -36,23 +36,25 @@ const io = new socket_io_1.Server(server, {
 const prisma = new client_1.PrismaClient();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+app.get('/', (req, res) => {
+    res.status(200).send('Nextalk Backend is running!');
+});
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
 const PORT = process.env.PORT || 3000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const googleClient = new google_auth_library_1.OAuth2Client(GOOGLE_CLIENT_ID);
-const uploadsDir = path_1.default.join(__dirname, '../uploads');
-if (!fs_1.default.existsSync(uploadsDir)) {
-    fs_1.default.mkdirSync(uploadsDir);
-}
-app.use('/uploads', express_1.default.static(uploadsDir));
-const storage = multer_1.default.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadsDir);
+cloudinary_1.v2.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+const storage = new multer_storage_cloudinary_1.CloudinaryStorage({
+    cloudinary: cloudinary_1.v2,
+    params: {
+        folder: 'nextalk_uploads',
+        resource_type: 'auto',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'zip', 'rar', 'webm', 'mp4'],
     },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path_1.default.extname(file.originalname));
-    }
 });
 const upload = (0, multer_1.default)({ storage });
 // -- REST API ENDPOINTS --
@@ -251,7 +253,7 @@ app.post('/api/users/avatar', authenticateAPI, upload.single('avatar'), (req, re
         if (!req.file)
             return res.status(400).json({ error: 'No file uploaded' });
         const currentUserId = req.user.userId;
-        const avatarUrl = `/uploads/${req.file.filename}`;
+        const avatarUrl = req.file.path; // Cloudinary absolute URL
         const updatedUser = yield prisma.user.update({
             where: { id: currentUserId },
             data: { avatarUrl }
@@ -309,8 +311,9 @@ app.post('/api/messages/upload', authenticateAPI, upload.single('file'), (req, r
             return res.status(400).json({ error: 'File and receiverId are required' });
         }
         const isImage = file.mimetype.startsWith('image/');
-        const type = isImage ? 'image' : 'file';
-        const fileUrl = `/uploads/${file.filename}`;
+        const isVideo = file.mimetype.startsWith('video/');
+        const type = isImage ? 'image' : (isVideo ? 'video' : 'file');
+        const fileUrl = file.path; // Cloudinary absolute URL
         const message = yield prisma.message.create({
             data: {
                 content: file.originalname,
@@ -413,6 +416,6 @@ io.on('connection', (socket) => {
         io.emit('user_status', { userId: user.userId, status: 'offline' });
     });
 });
-server.listen(PORT, () => {
+server.listen(typeof PORT === 'string' ? parseInt(PORT, 10) : PORT, () => {
     console.log(`Server listening on port ${PORT}`);
 });
