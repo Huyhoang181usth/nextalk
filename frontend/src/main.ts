@@ -1025,6 +1025,8 @@ sendMediaBtn.addEventListener('click', async () => {
   } finally {
     sendMediaBtn.disabled = false;
   }
+});
+
 // --- Calling Logic ---
 
 voiceCallBtn.addEventListener('click', () => startCall('voice'));
