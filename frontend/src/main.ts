@@ -658,6 +658,9 @@ async function selectUser(userId: number, username: string, avatarUrl?: string) 
     chatHeaderAvatar.textContent = username.charAt(0).toUpperCase();
   }
 
+  // Force refresh icons to ensure call buttons appear
+  if ((window as any).lucide) (window as any).lucide.createIcons();
+
   chatMessages.innerHTML = ''; // clear current messages
 
   try {
