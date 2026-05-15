@@ -101,6 +101,7 @@ const toggleMicBtn = document.getElementById('toggle-mic-btn')!;
 const toggleVideoBtn = document.getElementById('toggle-video-btn')!;
 const endCallBtn = document.getElementById('end-call-btn')!;
 const acceptCallBtn = document.getElementById('accept-call-btn')!;
+const callTimerDisplay = document.getElementById('call-timer')!;
 
 let isLoginMode = true;
 let pendingInviteCode: string | null = null;
@@ -110,6 +111,10 @@ let peerConnection: RTCPeerConnection | null = null;
 let localStream: MediaStream | null = null;
 let isVideoCall = false;
 let callTargetId: number | null = null;
+let isCallAccepted = false;
+let callStartTime: number | null = null;
+let callTimerInterval: any = null;
+let amIInitiator = false;
 const configuration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -543,11 +548,14 @@ function connectSocket() {
   socket.on('incoming_call', ({ from, fromName, type }) => {
     callTargetId = from;
     isVideoCall = type === 'video';
+    amIInitiator = false;
+    isCallAccepted = false;
     
     callOverlay.classList.remove('hidden');
     callName.textContent = fromName;
     callStatus.textContent = `Incoming ${type} call...`;
     callAvatar.textContent = fromName.charAt(0).toUpperCase();
+    callTimerDisplay.classList.add('hidden');
     
     acceptCallBtn.classList.remove('hidden');
     // Change hangup button style
@@ -556,12 +564,14 @@ function connectSocket() {
 
   socket.on('call_answered', async ({ accepted }) => {
     if (accepted) {
+      isCallAccepted = true;
       callStatus.textContent = 'Call connected';
       acceptCallBtn.classList.add('hidden');
+      startCallTimer();
       await startWebRTC(true); // true means we are the initiator
     } else {
       showToast('Call rejected', 'error');
-      closeCall();
+      closeCall(false); // No need to notify if they rejected
     }
   });
 
@@ -1040,10 +1050,13 @@ async function startCall(type: 'voice' | 'video') {
   
   callTargetId = activeChatUserId;
   isVideoCall = type === 'video';
+  isCallAccepted = false;
+  amIInitiator = true;
   
   callOverlay.classList.remove('hidden');
   callName.textContent = chatHeaderName.textContent;
   callStatus.textContent = 'Calling...';
+  callTimerDisplay.classList.add('hidden');
   acceptCallBtn.classList.add('hidden');
   
   socket.emit('call_user', {
@@ -1056,8 +1069,10 @@ async function startCall(type: 'voice' | 'video') {
 acceptCallBtn.addEventListener('click', () => {
   if (!callTargetId || !socket) return;
   socket.emit('call_response', { to: callTargetId, accepted: true });
+  isCallAccepted = true;
   callStatus.textContent = 'Connecting...';
   acceptCallBtn.classList.add('hidden');
+  startCallTimer();
 });
 
 endCallBtn.addEventListener('click', () => {
@@ -1112,10 +1127,20 @@ async function startWebRTC(isInitiator: boolean) {
 }
 
 function closeCall(notify = true) {
+  // If call wasn't accepted and we are ending it, log a missed call
+  if (amIInitiator && !isCallAccepted && callTargetId && socket) {
+    socket.emit('private_message', {
+      receiverId: callTargetId,
+      content: `📞 Missed ${isVideoCall ? 'video' : 'voice'} call`
+    });
+  }
+
   if (notify && callTargetId && socket) {
     socket.emit('end_call', { to: callTargetId });
   }
   
+  stopCallTimer();
+
   if (localStream) {
     localStream.getTracks().forEach(track => track.stop());
     localStream = null;
@@ -1126,13 +1151,35 @@ function closeCall(notify = true) {
     peerConnection = null;
   }
   
+  amIInitiator = false;
+  isCallAccepted = false;
   callOverlay.classList.add('hidden');
   localVideo.classList.add('hidden');
   remoteVideo.classList.add('hidden');
   callAvatar.classList.remove('hidden');
+  callTimerDisplay.classList.add('hidden');
   localVideo.srcObject = null;
   remoteVideo.srcObject = null;
   callTargetId = null;
+}
+
+function startCallTimer() {
+  callStartTime = Date.now();
+  callTimerDisplay.classList.remove('hidden');
+  callTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - callStartTime!) / 1000);
+    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const secs = (elapsed % 60).toString().padStart(2, '0');
+    callTimerDisplay.textContent = `${mins}:${secs}`;
+  }, 1000);
+}
+
+function stopCallTimer() {
+  if (callTimerInterval) {
+    clearInterval(callTimerInterval);
+    callTimerInterval = null;
+  }
+  callTimerDisplay.textContent = '00:00';
 }
 
 toggleMicBtn.addEventListener('click', () => {
@@ -1140,6 +1187,8 @@ toggleMicBtn.addEventListener('click', () => {
     const audioTrack = localStream.getAudioTracks()[0];
     audioTrack.enabled = !audioTrack.enabled;
     toggleMicBtn.classList.toggle('muted', !audioTrack.enabled);
+    toggleMicBtn.innerHTML = audioTrack.enabled ? '<i data-lucide="mic"></i>' : '<i data-lucide="mic-off"></i>';
+    if ((window as any).lucide) (window as any).lucide.createIcons();
   }
 });
 
@@ -1148,6 +1197,8 @@ toggleVideoBtn.addEventListener('click', () => {
     const videoTrack = localStream.getVideoTracks()[0];
     videoTrack.enabled = !videoTrack.enabled;
     toggleVideoBtn.classList.toggle('muted', !videoTrack.enabled);
+    toggleVideoBtn.innerHTML = videoTrack.enabled ? '<i data-lucide="video"></i>' : '<i data-lucide="video-off"></i>';
+    if ((window as any).lucide) (window as any).lucide.createIcons();
   }
 });
 
