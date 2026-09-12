@@ -668,15 +668,20 @@ input:focus {
 }
 
 .chat-input-area {
-  padding: 1rem 1.5rem;
+  padding: 0.6rem 0.8rem;
   border-top: 1px solid var(--border-color);
   background: white;
+  width: 100%;
 }
 
 #chat-form {
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+  margin: 0 !important;
 }
 
 .icon-btn-ghost {
@@ -691,7 +696,7 @@ input:focus {
   align-items: center;
   cursor: pointer;
   transition: all 0.2s;
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
 }
 
 .icon-btn-ghost:hover {
@@ -700,17 +705,20 @@ input:focus {
 }
 
 #message-input {
-  flex: 1;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
   background: #f1f5f9;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   border-radius: 20px;
-  padding: 0.75rem 1.2rem;
+  padding: 0.65rem 1rem;
   font-size: 0.92rem;
+  outline: none;
 }
 
 #message-input:focus {
   background: white;
   border-color: var(--zalo-blue);
+  box-shadow: 0 0 0 2px rgba(0, 104, 255, 0.15);
 }
 
 .send-btn {
@@ -718,14 +726,15 @@ input:focus {
   color: white;
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   transition: all 0.2s;
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
+  box-shadow: 0 2px 6px rgba(0, 104, 255, 0.3);
 }
 
 .send-btn:hover {
@@ -1516,8 +1525,9 @@ input:focus {
   border-top: 1px solid var(--border-color);
 }
 
-/* --- Mobile Screen Navigation & Responsiveness --- */
-.chat-back-btn {
+/* --- Mobile Back Arrow Buttons --- */
+.chat-back-btn,
+.mobile-tab-back-btn {
   background: transparent;
   border: none;
   color: var(--text-main);
@@ -1533,19 +1543,39 @@ input:focus {
   flex-shrink: 0;
 }
 
-.chat-back-btn:hover {
+.chat-back-btn:hover,
+.mobile-tab-back-btn:hover {
   background: #edf2f7;
   color: var(--zalo-blue);
 }
 
-.chat-back-btn i {
+.chat-back-btn i,
+.mobile-tab-back-btn i {
   width: 22px;
   height: 22px;
 }
 
+.mobile-pane-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobile-pane-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
 /* Hide back arrow button on desktop screens */
 @media (min-width: 769px) {
-  .chat-back-btn {
+  .chat-back-btn,
+  .mobile-tab-back-btn,
+  .mobile-pane-header {
     display: none !important;
   }
 }

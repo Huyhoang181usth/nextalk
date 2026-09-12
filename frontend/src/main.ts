@@ -408,6 +408,12 @@ if (chatBackBtn) {
   });
 }
 
+document.querySelectorAll('.mobile-tab-back-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    switchTab('messages');
+  });
+});
+
 const markAllReadBtn = document.getElementById('mark-all-read-btn');
 if (markAllReadBtn) {
   markAllReadBtn.addEventListener('click', (e) => {
