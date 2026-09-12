@@ -873,10 +873,10 @@ function appendMessage(message: any) {
 
   let mediaContent = '';
   if (message.type === 'image' && message.fileUrl) {
-    mediaContent = `<img src="${API_URL}${message.fileUrl}" class="message-image" alt="Attachment" />`;
+    mediaContent = `<img src="${getAvatarUrl(message.fileUrl)}" class="message-image" alt="Attachment" />`;
   } else if (message.type === 'file' && message.fileUrl) {
     mediaContent = `
-      <a href="${API_URL}${message.fileUrl}" target="_blank" class="message-file">
+      <a href="${getAvatarUrl(message.fileUrl)}" target="_blank" class="message-file">
         <i data-lucide="file-text"></i>
         <span>${message.content || 'Tải tệp về'}</span>
       </a>`;
