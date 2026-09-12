@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  zaloId           String?   @unique
+  username         String    @unique
+  passwordHash     String?
+  email            String?   @unique
+  avatarUrl        String?
+  fullName         String?
+  dob              String?
+  inviteCode       String    @unique @default(uuid())
+  lastSeen         DateTime? @default(now())
+  createdAt        DateTime  @default(now())
+  
+  messagesSent     Message[] @relation("SentMessages")
+  messagesReceived Message[] @relation("ReceivedMessages")
+
+  friendshipsInitiated Friendship[] @relation("FriendshipsInitiated")
+  friendshipsReceived  Friendship[] @relation("FriendshipsReceived")
+
+  posts         Post[]
+  likes         Like[]
+  comments      Comment[]
+  notifications Notification[] @relation("UserNotifications")
+  sentNotifs    Notification[] @relation("NotificationSender")
+}
+
+model Friendship {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("FriendshipsInitiated", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("FriendshipsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  type       String   @default("text")
+  content    String?
+  fileUrl    String?
+  createdAt  DateTime @default(now())
+  
+  senderId   Int
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  
+  receiverId Int
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  content   String?   @db.Text
+  imageUrl  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  authorId  Int
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  likes         Like[]
+  comments      Comment[]
+  notifications Notification[]
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  parentId  Int?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      String   // "like", "comment", "reply"
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId    Int
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  senderId  Int
+  sender    User     @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  postId    Int?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+}

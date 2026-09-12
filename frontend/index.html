@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexTalk - Trò chuyện & Nhật ký</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <div id="toast-container"></div>
+    <div id="app">
+      <!-- Auth Screen -->
+      <div id="auth-screen" class="screen">
+        <div class="card">
+          <div class="auth-brand">
+            <div class="zalo-logo-icon">NexTalk</div>
+            <h1 id="auth-title">Đăng Nhập NexTalk</h1>
+            <p class="subtitle" id="auth-subtitle">Kết nối và chia sẻ khoảnh khắc cùng bạn bè</p>
+          </div>
+          <form id="auth-form">
+            <div class="input-group">
+              <input type="text" id="username" placeholder="Tên đăng nhập / Tài khoản" required />
+            </div>
+            <div class="input-group">
+              <input type="password" id="password" placeholder="Mật khẩu" required />
+            </div>
+            <button type="submit" id="auth-submit">Đăng Nhập</button>
+          </form>
+          
+          <div class="divider">
+            <span>HOẶC</span>
+          </div>
+          
+          <div id="google-login-btn" class="google-login-wrapper"></div>
+
+          <p class="toggle-auth">
+            <span id="auth-toggle-text">Chưa có tài khoản?</span> 
+            <a href="#" id="toggle-auth-btn">Đăng ký ngay</a>
+          </p>
+          <div id="auth-error" class="error-msg"></div>
+        </div>
+      </div>
+
+      <!-- Main Zalo Web Screen -->
+      <div id="chat-screen" class="screen hidden">
+        <!-- 1. Leftmost Zalo Primary Navigation Rail -->
+        <nav class="zalo-rail">
+          <div class="rail-top">
+            <div class="user-avatar-wrapper" id="rail-user-avatar" title="Hồ sơ cá nhân">
+              <div class="avatar my-avatar" id="my-avatar-display">U</div>
+              <img id="my-avatar-img" class="avatar my-avatar hidden" alt="Avatar" />
+              <div id="my-user-id-badge" class="my-id-badge" title="ID tài khoản NexTalk 6 số của bạn">ID ...</div>
+            </div>
+            <div class="rail-tabs">
+              <button class="rail-tab active" id="tab-messages" title="Tin nhắn">
+                <i data-lucide="message-square"></i>
+                <span class="tab-label">Tin nhắn</span>
+              </button>
+              <button class="rail-tab" id="tab-feed" title="Nhật ký">
+                <i data-lucide="newspaper"></i>
+                <span class="tab-label">Nhật ký</span>
+              </button>
+              <button class="rail-tab" id="tab-contacts" title="Bạn bè">
+                <i data-lucide="users"></i>
+                <span class="tab-label">Bạn bè</span>
+              </button>
+              <button class="rail-tab" id="tab-notifications" title="Thông báo">
+                <i data-lucide="bell"></i>
+                <span class="tab-label">Thông báo</span>
+                <span id="notif-badge-count" class="tab-badge hidden">0</span>
+              </button>
+            </div>
+          </div>
+          <div class="rail-bottom">
+            <button class="rail-btn" id="profile-btn" title="Cá nhân">
+              <i data-lucide="user-cog"></i>
+            </button>
+            <button class="rail-btn danger" id="logout-btn" title="Đăng xuất">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
+        </nav>
+
+        <!-- 2. Sub-sidebar Panel (Dynamic based on Tab) -->
+        <aside class="zalo-sub-sidebar">
+          <!-- Sub-sidebar Header for Chat Tab -->
+          <div id="sub-header-chat" class="sub-sidebar-header">
+            <div class="sub-title-bar">
+              <h2>Tin nhắn</h2>
+            </div>
+            <div class="search-bar">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="add-friend-input" placeholder="Nhập NexTalk ID 6 số (VD: 839201), Username..." />
+              <button id="add-friend-btn" class="btn-add">Kết bạn</button>
+            </div>
+          </div>
+
+          <!-- Sub-sidebar Header for Friends Tab -->
+          <div id="sub-header-friends" class="sub-sidebar-header hidden">
+            <div class="sub-title-bar">
+              <h2>Danh Sách Bạn Bè (<span id="friends-count-badge">0</span>)</h2>
+            </div>
+            <div class="search-bar">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="friends-search-input" placeholder="Tìm bạn bè theo tên, NexTalk ID..." />
+            </div>
+          </div>
+
+          <!-- Sub-sidebar Header for Newsfeed Tab -->
+          <div id="sub-header-feed" class="sub-sidebar-header hidden">
+            <div class="sub-title-bar">
+              <h2>Nhật ký NexTalk</h2>
+            </div>
+            <div class="feed-filter-info">
+              <p>Chia sẻ khoảnh khắc & lưu giữ kỉ niệm cùng bạn bè.</p>
+            </div>
+          </div>
+
+          <!-- Sub-sidebar Header for Notifications Tab -->
+          <div id="sub-header-notifications" class="sub-sidebar-header hidden">
+            <div class="sub-title-bar">
+              <h2>Thông báo</h2>
+            </div>
+            <div class="feed-filter-info">
+              <p>Lời mời kết bạn & Thông báo hệ thống.</p>
+            </div>
+          </div>
+
+          <!-- User / Conversation List -->
+          <div class="conversation-container">
+            <ul id="user-list">
+              <!-- Dynamic user items will be rendered here -->
+            </ul>
+          </div>
+        </aside>
+
+        <!-- 3. Main Workspace Area (Chat View OR Newsfeed View) -->
+        <main class="zalo-workspace">
+          
+          <!-- Chat Main View -->
+          <div id="chat-view-container" class="workspace-pane">
+            <div id="chat-header" class="chat-header hidden">
+              <div class="chat-header-info">
+                <div class="avatar" id="chat-header-avatar"></div>
+                <img id="chat-header-avatar-img" class="avatar hidden" />
+                <div class="user-details">
+                  <h3 id="chat-header-name">Chọn bạn bè để trò chuyện</h3>
+                  <span id="chat-header-status" class="user-status-text">Ngoại tuyến</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="chat-messages" class="chat-messages">
+              <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="messages-square"></i></div>
+                <h3>Chào mừng bạn đến với NexTalk!</h3>
+                <p>Hãy chọn một người bạn từ danh sách bên trái để bắt đầu nhắn tin.</p>
+              </div>
+            </div>
+
+            <div id="chat-input-area" class="chat-input-area hidden">
+              <form id="chat-form">
+                <button type="button" id="attach-btn" class="icon-btn-ghost" title="Đính kèm tệp / hình ảnh">
+                  <i data-lucide="paperclip"></i>
+                </button>
+                <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.doc,.docx,.zip,.rar" />
+                <input type="text" id="message-input" placeholder="Nhập tin nhắn tới bạn bè..." autocomplete="off" />
+                <button type="submit" class="send-btn">
+                  <i data-lucide="send"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Newsfeed Main View -->
+          <div id="newsfeed-view-container" class="workspace-pane hidden">
+            <div class="newsfeed-scroll-area">
+              <div class="newsfeed-content">
+                
+                <!-- Create Post Card -->
+                <div class="create-post-card">
+                  <div class="post-composer-header">
+                    <div class="avatar my-avatar" id="composer-avatar">U</div>
+                    <img id="composer-avatar-img" class="avatar my-avatar hidden" alt="Avatar" />
+                    <span class="composer-username" id="composer-username">Tên người dùng</span>
+                  </div>
+                  <form id="create-post-form">
+                    <textarea id="post-content-input" placeholder="Hôm nay bạn thế nào? Đăng nhật ký ngay..." rows="3"></textarea>
+                    
+                    <!-- Image Preview Container -->
+                    <div id="post-image-preview-container" class="image-preview-box hidden">
+                      <img id="post-image-preview" src="" alt="Preview" />
+                      <button type="button" id="remove-preview-btn" class="btn-remove-preview" title="Hủy chọn ảnh">&times;</button>
+                    </div>
+
+                    <div class="post-composer-footer">
+                      <div class="composer-actions">
+                        <label for="post-image-input" class="action-btn" title="Đính kèm hình ảnh">
+                          <i data-lucide="image"></i>
+                          <span>Ảnh</span>
+                        </label>
+                        <input type="file" id="post-image-input" accept="image/*" class="hidden" />
+                      </div>
+                      <button type="submit" id="submit-post-btn" class="btn-primary">Đăng Nhật Ký</button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Posts List Feed -->
+                <div class="feed-header-title">
+                  <h3>Nhật Ký Bạn Bè</h3>
+                </div>
+
+                <div id="feed-list-container" class="feed-list">
+                  <!-- Dynamic Newsfeed Posts will be injected here -->
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications Main View -->
+          <div id="notifications-view-container" class="workspace-pane hidden">
+            <div class="newsfeed-scroll-area">
+              <div class="newsfeed-content">
+                <div class="feed-header-title">
+                  <h3>Lời Mời Kết Bạn</h3>
+                </div>
+                <div id="friend-requests-list" class="feed-list">
+                  <!-- Dynamic pending friend requests will be injected here -->
+                </div>
+
+                <div class="feed-header-title" style="margin-top: 1.5rem;">
+                  <h3>Thông Báo Hoạt Động (Thích & Bình Luận)</h3>
+                  <button id="mark-all-read-btn" class="btn-secondary-link" style="font-size: 0.82rem; cursor: pointer; color: var(--zalo-blue); background: none; border: none; font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
+                    <i data-lucide="check-check" style="width: 15px; height: 15px;"></i> Đánh dấu tất cả đã đọc
+                  </button>
+                </div>
+                <div id="system-notifications-list" class="feed-list">
+                  <!-- Dynamic notifications will be injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </main>
+
+      </div>
+    </div>
+
+    <!-- Profile Modal (Cá nhân) -->
+    <div id="profile-modal" class="modal-backdrop hidden">
+      <div class="profile-modal-card">
+        <div class="profile-modal-header">
+          <h3>Thông Tin Cá Nhân</h3>
+          <button id="close-profile-modal" class="btn-close-modal" type="button">&times;</button>
+        </div>
+        <div class="profile-modal-body">
+          <div class="profile-avatar-section">
+            <div class="avatar-change-wrapper">
+              <div class="avatar profile-avatar-display" id="profile-avatar-text">U</div>
+              <img id="profile-avatar-img" class="avatar profile-avatar-display hidden" alt="Avatar" />
+              <label for="profile-avatar-input" class="avatar-change-btn" title="Đổi ảnh đại diện">
+                <i data-lucide="camera"></i>
+              </label>
+              <input type="file" id="profile-avatar-input" class="hidden" accept="image/*" />
+            </div>
+            <span class="profile-username-label" id="profile-display-username">Username</span>
+          </div>
+
+          <form id="profile-form" class="profile-form">
+            <div class="form-group">
+              <label><i data-lucide="user"></i> Họ và Tên</label>
+              <input type="text" id="profile-fullname-input" placeholder="Nhập họ và tên..." />
+            </div>
+
+            <div class="form-group">
+              <label><i data-lucide="hash"></i> NexTalk ID (6 số)</label>
+              <div class="input-with-action">
+                <input type="text" id="profile-zalo-id-display" readonly disabled style="background:#f1f5f9; font-weight:700; color:var(--zalo-blue);" />
+                <button type="button" id="copy-zalo-id-btn" class="btn-input-action">Sao chép ID</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label><i data-lucide="calendar"></i> Ngày tháng năm sinh</label>
+              <input type="date" id="profile-dob-input" />
+            </div>
+
+            <div class="form-group">
+              <label><i data-lucide="mail"></i> Email</label>
+              <input type="text" id="profile-email-display" readonly disabled style="background:#f1f5f9; color:var(--text-muted);" />
+            </div>
+
+            <div class="profile-modal-footer" style="justify-content: flex-end;">
+              <div style="display:flex; gap:0.5rem;">
+                <button type="button" id="cancel-profile-btn" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: white; cursor: pointer;">Hủy</button>
+                <button type="submit" id="save-profile-btn" class="btn-primary" style="padding: 0.5rem 1.2rem; border-radius: var(--radius-sm); background: var(--zalo-blue); color: white; border: none; font-weight: 600; cursor: pointer;">Lưu thay đổi</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
