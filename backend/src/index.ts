@@ -271,7 +271,7 @@ app.post('/api/profile/avatar', authenticateAPI, upload.single('avatar'), async 
   }
 });
 
-// Get accepted friends
+// Get accepted friends with lastMessage preview
 app.get('/api/friends', authenticateAPI, async (req: any, res: any) => {
   try {
     const currentUserId = req.user.userId;
@@ -286,16 +286,30 @@ app.get('/api/friends', authenticateAPI, async (req: any, res: any) => {
       }
     });
 
-    const friends = friendships.map(f => {
+    const friends = await Promise.all(friendships.map(async f => {
       const friend = f.senderId === currentUserId ? f.receiver : f.sender;
+      
+      const lastMsg = await prisma.message.findFirst({
+        where: {
+          OR: [
+            { senderId: currentUserId, receiverId: friend.id },
+            { senderId: friend.id, receiverId: currentUserId }
+          ]
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { content: true, type: true, senderId: true, createdAt: true }
+      });
+
       return {
         ...friend,
-        isOnline: connectedUsers.has(friend.id)
+        isOnline: connectedUsers.has(friend.id),
+        lastMessage: lastMsg || null
       };
-    });
+    }));
 
     res.json(friends);
   } catch (error) {
+    console.error('Fetch friends error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

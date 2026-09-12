@@ -19,6 +19,12 @@ interface UserItem {
   avatarUrl?: string;
   isOnline?: boolean;
   lastSeen?: string;
+  lastMessage?: {
+    content?: string;
+    type: string;
+    senderId: number;
+    createdAt: string;
+  } | null;
 }
 let users: UserItem[] = [];
 
@@ -627,6 +633,18 @@ function connectSocket() {
   });
 
   socket.on('new_message', (message) => {
+    const otherUserId = message.senderId === currentUserId ? message.receiverId : message.senderId;
+    const targetUser = users.find(u => u.id === otherUserId);
+    if (targetUser) {
+      targetUser.lastMessage = {
+        content: message.content,
+        type: message.type,
+        senderId: message.senderId,
+        createdAt: message.createdAt
+      };
+      renderUsers();
+    }
+
     if (
       (message.senderId === activeChatUserId && message.receiverId === currentUserId) ||
       (message.senderId === currentUserId && message.receiverId === activeChatUserId)
@@ -714,7 +732,8 @@ async function fetchFriends() {
     users = data.map((u: any) => ({
       ...u,
       isOnline: u.isOnline ?? false,
-      status: u.isOnline ? 'online' : 'offline'
+      status: u.isOnline ? 'online' : 'offline',
+      lastMessage: u.lastMessage || null
     }));
     if (friendsCountBadge) {
       friendsCountBadge.textContent = users.length.toString();
@@ -751,16 +770,29 @@ function renderUsers(filterQuery = '') {
     }
 
     const displayId = user.zaloId || user.id;
-    const statusText = formatUserLastSeen(user.isOnline, user.lastSeen);
-    const statusClass = user.isOnline ? 'online' : '';
+
+    let subtext = '';
+    if (user.lastMessage) {
+      const isSentByMe = user.lastMessage.senderId === currentUserId;
+      const prefix = isSentByMe ? 'Bạn: ' : '';
+      if (user.lastMessage.type === 'image') {
+        subtext = `${prefix}[Hình ảnh]`;
+      } else if (user.lastMessage.type === 'file') {
+        subtext = `${prefix}[Tệp đính kèm]`;
+      } else {
+        subtext = `${prefix}${user.lastMessage.content || ''}`;
+      }
+    } else {
+      subtext = 'Nhấn để trò chuyện';
+    }
 
     li.innerHTML = `
       ${avatarHtml}
       <div class="user-info">
         <div class="user-name">${escapeHtml(user.username)} <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal; margin-left:2px;">(ID: ${displayId})</span></div>
-        <div class="user-status-subtext ${statusClass}">${statusText}</div>
+        <div class="user-status-subtext">${escapeHtml(subtext)}</div>
       </div>
-      <div class="user-status-dot ${user.isOnline ? 'online' : 'offline'}"></div>
+      <div class="user-status-dot ${user.isOnline ? 'online' : 'offline'}" title="${user.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}"></div>
     `;
     li.addEventListener('click', () => selectUser(user.id, user.username, user.isOnline ? 'online' : 'offline', user.avatarUrl, user.lastSeen));
     userList.appendChild(li);
