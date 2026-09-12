@@ -1591,6 +1591,24 @@ input:focus {
     display: none;
   }
 
+  /* On mobile: Newsfeed and Notifications tabs show workspace full width */
+  #chat-screen.tab-is-feed .zalo-sub-sidebar,
+  #chat-screen.tab-is-notifications .zalo-sub-sidebar {
+    display: none !important;
+  }
+
+  #chat-screen.tab-is-feed .zalo-workspace,
+  #chat-screen.tab-is-notifications .zalo-workspace {
+    display: flex !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 150;
+    background: white;
+  }
+
   /* When mobile 1-on-1 chat is active */
   #chat-screen.mobile-chat-active .zalo-rail,
   #chat-screen.mobile-chat-active .zalo-sub-sidebar {

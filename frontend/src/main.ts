@@ -426,6 +426,8 @@ if (friendsSearchInput) {
 function switchTab(tab: ActiveTab) {
   currentActiveTab = tab;
   chatScreen.classList.remove('mobile-chat-active');
+  chatScreen.classList.toggle('tab-is-feed', tab === 'feed');
+  chatScreen.classList.toggle('tab-is-notifications', tab === 'notifications');
 
   tabMessagesBtn.classList.toggle('active', tab === 'messages');
   tabFeedBtn.classList.toggle('active', tab === 'feed');
