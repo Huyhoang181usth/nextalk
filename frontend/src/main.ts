@@ -128,6 +128,7 @@ const systemNotificationsList = document.getElementById('system-notifications-li
 
 // Chat DOM
 const chatHeader = document.getElementById('chat-header')!;
+const chatBackBtn = document.getElementById('chat-back-btn');
 const chatHeaderName = document.getElementById('chat-header-name')!;
 const chatHeaderStatus = document.getElementById('chat-header-status')!;
 const chatHeaderAvatar = document.getElementById('chat-header-avatar')!;
@@ -401,6 +402,12 @@ tabFeedBtn.addEventListener('click', () => switchTab('feed'));
 tabContactsBtn.addEventListener('click', () => switchTab('contacts'));
 tabNotificationsBtn.addEventListener('click', () => switchTab('notifications'));
 
+if (chatBackBtn) {
+  chatBackBtn.addEventListener('click', () => {
+    chatScreen.classList.remove('mobile-chat-active');
+  });
+}
+
 const markAllReadBtn = document.getElementById('mark-all-read-btn');
 if (markAllReadBtn) {
   markAllReadBtn.addEventListener('click', (e) => {
@@ -418,6 +425,7 @@ if (friendsSearchInput) {
 
 function switchTab(tab: ActiveTab) {
   currentActiveTab = tab;
+  chatScreen.classList.remove('mobile-chat-active');
 
   tabMessagesBtn.classList.toggle('active', tab === 'messages');
   tabFeedBtn.classList.toggle('active', tab === 'feed');
@@ -753,6 +761,7 @@ function renderUsers(filterQuery = '') {
 
 async function selectUser(userId: number, username: string, status: 'online' | 'offline', avatarUrl?: string, lastSeen?: string) {
   activeChatUserId = userId;
+  chatScreen.classList.add('mobile-chat-active');
   renderUsers();
 
   chatHeader.classList.remove('hidden');

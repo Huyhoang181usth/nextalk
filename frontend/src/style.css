@@ -1515,3 +1515,108 @@ input:focus {
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
 }
+
+/* --- Mobile Screen Navigation & Responsiveness --- */
+.chat-back-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 0.2rem;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.chat-back-btn:hover {
+  background: #edf2f7;
+  color: var(--zalo-blue);
+}
+
+.chat-back-btn i {
+  width: 22px;
+  height: 22px;
+}
+
+/* Hide back arrow button on desktop screens */
+@media (min-width: 769px) {
+  .chat-back-btn {
+    display: none !important;
+  }
+}
+
+/* Mobile Screens (<= 768px) */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+  }
+
+  #app {
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  #chat-screen {
+    position: relative;
+  }
+
+  .zalo-rail {
+    width: 58px;
+    padding: 0.8rem 0;
+  }
+
+  .my-id-badge {
+    display: none;
+  }
+
+  .rail-tab .tab-label {
+    display: none;
+  }
+
+  .rail-tab {
+    padding: 0.9rem 0;
+  }
+
+  .zalo-sub-sidebar {
+    flex: 1;
+    width: auto;
+  }
+
+  .zalo-workspace {
+    display: none;
+  }
+
+  /* When mobile 1-on-1 chat is active */
+  #chat-screen.mobile-chat-active .zalo-rail,
+  #chat-screen.mobile-chat-active .zalo-sub-sidebar {
+    display: none !important;
+  }
+
+  #chat-screen.mobile-chat-active .zalo-workspace {
+    display: flex !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 200;
+    background: white;
+  }
+
+  .chat-header {
+    padding: 0 0.8rem;
+  }
+
+  .message {
+    max-width: 85%;
+  }
+
+  .newsfeed-content {
+    padding: 0 0.5rem;
+  }
+}
