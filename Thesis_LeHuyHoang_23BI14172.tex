@@ -792,25 +792,54 @@ app.post('/api/posts/:postId/like', authenticateAPI, async (req: any, res: any) 
 });
 \end{lstlisting}
 
-\subsection{Media File Storage and Upload Pipeline}
-File and image uploads are parsed using \textbf{Multer} and saved to the \texttt{/uploads} directory with randomized filenames:
+\subsection{Production Deployment \& Reverse Proxy Setup}
+To evaluate \textbf{Nextalk} under realistic network conditions and provide public access for users, the fullstack system was deployed on a \textbf{Vietnix Cloud VPS (Ubuntu 22.04 LTS)} under the official registered domain \url{https://nextalk.pro.vn}.
 
-\begin{lstlisting}[language=Java, caption={Multer Disk Storage Upload Configuration}]
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
+\subsubsection{NGINX Reverse Proxy \& HTTPS / WSS SSL Termination}
+An \textbf{NGINX web server} acts as a reverse proxy and primary gateway. NGINX handles SSL/TLS termination using Let's Encrypt certificates, enforcing secure HTTPS communication for REST API calls and WebSocket Secure (\textbf{\texttt{wss://}}) connections for real-time socket events.
 
-app.post('/api/upload', authenticateAPI, upload.single('file'), (req: any, res: any) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ fileUrl });
-});
+\begin{lstlisting}[language=SQL, caption={NGINX Reverse Proxy \& SSL Configuration (nextalk.pro.vn)}]
+server {
+    listen 80;
+    server_name nextalk.pro.vn;
+    return 301 https://$host$request_uri; # Enforce HTTPS
+}
+
+server {
+    listen 443 ssl http2;
+    server_name nextalk.pro.vn;
+
+    ssl_certificate /etc/letsencrypt/live/nextalk.pro.vn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/nextalk.pro.vn/privkey.pem;
+
+    # Serve Compiled Frontend SPA
+    root /var/www/nextalk/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Reverse Proxy REST API & Socket.io Backend (Port 3000)
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+}
 \end{lstlisting}
+
+\subsubsection{Process Management \& Database Hosting}
+The Node.js backend process is managed by \textbf{PM2 Process Manager} (\texttt{pm2 start}, \texttt{pm2 restart all}), providing automatic service recovery upon server reboot or uncaught exceptions. Data persistence is backed by a production-tuned \textbf{MySQL database} instance hosted locally on the VPS listening on port \texttt{3306}.
 
 \newpage
 

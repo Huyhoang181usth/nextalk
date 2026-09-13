@@ -121,13 +121,14 @@ The main goal of this graduation thesis is to design, implement, and evaluate **
 The project encompasses:
 * **Backend:** REST API endpoints for user registration, authentication, profile management, friendship requests, media upload, and post/comment operations; Socket.io event listeners for instant messaging and live notifications.
 * **Frontend:** A responsive Single Page Application (SPA) built with Vite, TypeScript, and custom CSS without relying on heavy frontend frameworks, ensuring lightweight client execution.
-* **Database:** MySQL database hosted locally or in containerized environments, managed via Prisma schema migrations.
+* **Database:** MySQL relational database hosted on the server environment, managed via Prisma schema migrations.
+* **Production Deployment:** Live web deployment on a Vietnix Cloud VPS under the official domain `https://nextalk.pro.vn`, secured with HTTPS/WSS encryption, managed via PM2 process manager and an NGINX reverse proxy.
 
 ### 1.5 Thesis Structure
 The remainder of this thesis is structured as follows:
 * **Chapter 2** presents a comprehensive technical background of web communication protocols and underlying tech stacks.
 * **Chapter 3** outlines requirements engineering, system architecture, database schema, REST API design, and WebSocket event protocols.
-* **Chapter 4** describes the implementation details of the core software modules.
+* **Chapter 4** describes the implementation details of core software modules and production deployment on VPS.
 * **Chapter 5** presents empirical test cases, latency benchmarks, security analysis, and results.
 * **Chapter 6** summarizes achievements, identifies limitations, and outlines future research directions.
 
@@ -696,6 +697,57 @@ app.post('/api/upload', authenticateAPI, upload.single('file'), (req: any, res: 
   res.json({ fileUrl });
 });
 ```
+
+### 4.7 Production Deployment & Reverse Proxy Setup
+
+To evaluate **Nextalk** under realistic network conditions and provide public access for users, the fullstack system was deployed on a **Vietnix Cloud VPS (Ubuntu 22.04 LTS)** under the official registered domain **`https://nextalk.pro.vn`**.
+
+#### 1. NGINX Reverse Proxy & HTTPS / WSS SSL Termination
+An **NGINX web server** acts as a reverse proxy and primary gateway. NGINX handles SSL/TLS termination using Let's Encrypt certificates, enforcing secure HTTPS communication for REST API calls and WebSocket Secure (**`wss://`**) connections for real-time socket events.
+
+```nginx
+# NGINX Configuration for nextalk.pro.vn
+server {
+    listen 80;
+    server_name nextalk.pro.vn;
+    return 301 https://$host$request_uri; # Enforce HTTPS
+}
+
+server {
+    listen 443 ssl http2;
+    server_name nextalk.pro.vn;
+
+    ssl_certificate /etc/letsencrypt/live/nextalk.pro.vn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/nextalk.pro.vn/privkey.pem;
+
+    # Serve Compiled Frontend SPA
+    root /var/www/nextalk/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Reverse Proxy REST API & Socket.io Backend (Port 3000)
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
+
+#### 2. Process Management & Database Hosting
+The Node.js backend process is managed by **PM2 Process Manager** (`pm2 start`, `pm2 restart all`), providing automatic service recovery upon server reboot or uncaught exceptions. Data persistence is backed by a production-tuned **MySQL database** instance hosted locally on the VPS listening on port `3306`.
 
 ---
 
