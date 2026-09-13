@@ -1,27 +1,30 @@
 :root {
-  --zalo-blue: #0068ff;
-  --zalo-blue-hover: #0054cc;
-  --zalo-blue-light: #e5efef;
-  --zalo-rail-bg: #001a33;
-  --zalo-rail-hover: rgba(255, 255, 255, 0.12);
+  --zalo-blue: #4f46e5;
+  --zalo-blue-hover: #4338ca;
+  --zalo-blue-light: #eef2ff;
+  --zalo-blue-accent: #3b82f6;
+  --zalo-cyan: #06b6d4;
+  --zalo-rail-bg: #0f172a;
+  --zalo-rail-hover: rgba(99, 102, 241, 0.18);
   --zalo-sub-bg: #ffffff;
   
-  --bg-main: #eaeeef;
+  --bg-main: #f1f5f9;
   --bg-app: #ffffff;
-  --bg-sidebar: #f7f9fa;
-  --text-main: #081c36;
-  --text-muted: #72808e;
-  --border-color: #e3e7eb;
-  --danger: #ef233c;
+  --bg-sidebar: #f8fafc;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --danger: #ef4444;
   --success: #10b981;
+  --warning: #f59e0b;
   
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 20px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 20px 45px -10px rgba(15, 23, 42, 0.15);
   
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
 }
 
 * {
@@ -117,19 +120,38 @@ body {
 
 /* ---------------- Auth Screen ---------------- */
 #auth-screen {
-  background: linear-gradient(135deg, #0068ff 0%, #0045aa 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #312e81 80%, #4338ca 100%);
   justify-content: center;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+#auth-screen::before {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(6, 182, 212, 0) 70%);
+  top: -120px;
+  right: -120px;
+  filter: blur(40px);
+  pointer-events: none;
 }
 
 .card {
-  background: white;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
   width: 100%;
   max-width: 440px;
   padding: 3rem 2.5rem;
   border-radius: var(--radius-lg);
   text-align: center;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  position: relative;
+  z-index: 10;
 }
 
 .auth-brand {
@@ -143,12 +165,12 @@ body {
   font-weight: 900;
   font-size: 1.8rem;
   color: white;
-  background: var(--zalo-blue);
-  padding: 0.4rem 1.2rem;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
+  padding: 0.45rem 1.4rem;
+  border-radius: 14px;
   letter-spacing: 1px;
   margin-bottom: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 104, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
 }
 
 .card h1 {
@@ -156,6 +178,7 @@ body {
   margin-bottom: 0.4rem;
   font-weight: 800;
   color: var(--text-main);
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
@@ -172,7 +195,7 @@ form {
 
 .input-group input, input[type="text"], input[type="password"] {
   width: 100%;
-  padding: 0.9rem 1.2rem;
+  padding: 0.95rem 1.25rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background: #f8fafc;
@@ -186,11 +209,11 @@ form {
 input:focus {
   border-color: var(--zalo-blue);
   background: white;
-  box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.15);
+  box-shadow: 0 0 0 3.5px rgba(79, 70, 229, 0.15);
 }
 
 #auth-submit {
-  background: var(--zalo-blue);
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
   color: white;
   border: none;
   padding: 0.95rem;
@@ -199,12 +222,12 @@ input:focus {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 104, 255, 0.3);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
 }
 
 #auth-submit:hover {
-  background: var(--zalo-blue-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.45);
 }
 
 .divider {
@@ -264,15 +287,16 @@ input:focus {
 
 /* 1. Leftmost Zalo Rail (Primary Navigation) */
 .zalo-rail {
-  width: 68px;
-  background: var(--zalo-rail-bg);
+  width: 72px;
+  background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 1.2rem 0;
+  padding: 1.4rem 0;
   flex-shrink: 0;
   z-index: 100;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
 }
 
 .rail-top {
@@ -294,18 +318,19 @@ input:focus {
 .my-id-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #60a5fa;
-  background: rgba(255, 255, 255, 0.12);
-  padding: 2px 6px;
-  border-radius: 10px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.22);
+  padding: 3px 8px;
+  border-radius: 12px;
   letter-spacing: 0.3px;
+  border: 1px solid rgba(165, 180, 252, 0.25);
 }
 
 .avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0068ff, #00c6ff);
+  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #06b6d4 100%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -314,10 +339,11 @@ input:focus {
   color: white;
   flex-shrink: 0;
   object-fit: cover;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
 
 .avatar.my-avatar {
-  border: 2px solid white;
+  border: 2px solid #818cf8;
 }
 
 .rail-tabs {
@@ -330,9 +356,9 @@ input:focus {
 .rail-tab {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(226, 232, 240, 0.65);
   width: 100%;
-  padding: 0.8rem 0;
+  padding: 0.85rem 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -353,13 +379,13 @@ input:focus {
 }
 
 .rail-tab:hover {
-  color: white;
+  color: #ffffff;
   background: var(--zalo-rail-hover);
 }
 
 .rail-tab.active {
-  color: white;
-  background: var(--zalo-rail-hover);
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.28) 0%, rgba(59, 130, 246, 0.15) 100%);
 }
 
 .rail-tab.active::before {
@@ -369,8 +395,9 @@ input:focus {
   top: 15%;
   height: 70%;
   width: 4px;
-  background: white;
+  background: linear-gradient(180deg, #818cf8 0%, #38bdf8 100%);
   border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.6);
 }
 
 .rail-bottom {
@@ -502,11 +529,12 @@ input:focus {
 }
 
 .user-item:hover {
-  background: #edf2f7;
+  background: #f1f5f9;
 }
 
 .user-item.active {
-  background: #e5efff;
+  background: #eef2ff;
+  border-left: 3.5px solid var(--zalo-blue);
 }
 
 .user-info {
@@ -644,10 +672,15 @@ input:focus {
 
 .message.sent {
   align-self: flex-end;
-  background: #e5efff;
-  color: var(--text-main);
-  border: 1px solid #c2d9ff;
-  border-radius: 14px 14px 2px 14px;
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+  border-radius: 16px 16px 3px 16px;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+}
+
+.message.sent .message-time {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .message.received {
@@ -655,8 +688,8 @@ input:focus {
   background: white;
   color: var(--text-main);
   border: 1px solid var(--border-color);
-  border-radius: 14px 14px 14px 2px;
-  box-shadow: var(--shadow-sm);
+  border-radius: 16px 16px 16px 3px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .message-time {
@@ -903,20 +936,21 @@ input:focus {
 }
 
 .btn-primary {
-  background: var(--zalo-blue);
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
   color: white;
   border: none;
-  padding: 0.6rem 1.3rem;
+  padding: 0.65rem 1.4rem;
   border-radius: 20px;
   font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 3px 8px rgba(0, 104, 255, 0.25);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
 .btn-primary:hover {
-  background: var(--zalo-blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
 }
 
 .feed-header-title {
@@ -1041,11 +1075,12 @@ input:focus {
 }
 
 .post-action-btn.liked {
-  color: #ef233c;
+  color: #ef4444;
 }
 
 .post-action-btn.liked i {
-  fill: #ef233c;
+  fill: #ef4444;
+  filter: drop-shadow(0 2px 6px rgba(239, 68, 68, 0.35));
 }
 
 /* Comments Section */
