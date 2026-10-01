@@ -601,15 +601,19 @@ if (copyZaloIdBtn) {
   });
 }
 
-// Socket Connection
+// =========================================================================
+// 🌐 REALTIME SOCKET CONNECTION & EVENT LISTENERS
+// =========================================================================
 function connectSocket() {
   const token = localStorage.getItem('token');
   if (!token) return;
 
+  // Khởi tạo kết nối Socket.io đến Backend kèm theo JWT token xác thực
   socket = io(API_URL, {
     auth: { token }
   });
 
+  // Lắng nghe danh sách user online ban đầu khi mới kết nối
   socket.on('initial_online_users', (onlineUserIds: number[]) => {
     users.forEach(u => {
       u.isOnline = onlineUserIds.includes(u.id);
@@ -618,6 +622,7 @@ function connectSocket() {
     renderUsers();
   });
 
+  // Lắng nghe thay đổi trạng thái online/offline của bạn bè
   socket.on('user_status', (data: { userId: number; status?: string; isOnline?: boolean; lastSeen?: string }) => {
     const user = users.find(u => u.id === data.userId);
     if (user) {
@@ -632,7 +637,11 @@ function connectSocket() {
     }
   });
 
+  // =======================================================================
+  // 📥 2. [RECEIVE]: Lắng nghe tin nhắn mới được Server phát tới (Realtime)
+  // =======================================================================
   socket.on('new_message', (message) => {
+    // Cập nhật tin nhắn xem trước gần nhất ở Sidebar bên trái
     const otherUserId = message.senderId === currentUserId ? message.receiverId : message.senderId;
     const targetUser = users.find(u => u.id === otherUserId);
     if (targetUser) {
@@ -645,12 +654,13 @@ function connectSocket() {
       renderUsers();
     }
 
+    // Nếu đang mở đúng ô chat với đối phương (người gửi hoặc người nhận)
     if (
       (message.senderId === activeChatUserId && message.receiverId === currentUserId) ||
       (message.senderId === currentUserId && message.receiverId === activeChatUserId)
     ) {
-      appendMessage(message);
-      scrollToBottom();
+      appendMessage(message); // Vẽ tin nhắn lên UI
+      scrollToBottom();       // Tự động cuộn xuống dòng mới nhất
     } else if (currentActiveTab !== 'messages' && message.senderId !== currentUserId) {
       showToast('Bạn vừa nhận được 1 tin nhắn mới!', 'success');
     }
@@ -847,12 +857,15 @@ async function selectUser(userId: number, username: string, status: 'online' | '
   }
 }
 
-// Send Chat Message
+// =========================================================================
+// 📤 1. [SEND]: Gửi tin nhắn qua Socket.io khi ấn Send / Enter
+// =========================================================================
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const content = messageInput.value.trim();
   if (!content || !activeChatUserId || !socket) return;
 
+  // Phát sự kiện 'private_message' lên Backend kèm theo receiverId và nội dung
   socket.emit('private_message', {
     receiverId: activeChatUserId,
     content

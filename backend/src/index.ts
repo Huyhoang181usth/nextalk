@@ -841,9 +841,11 @@ app.post('/api/notifications/read-all', authenticateAPI, async (req: any, res: a
   }
 });
 
-// -- WEBSOCKET (Socket.io) --
+// =========================================================================
+//  REALTIME COMMUNICATION BACKEND (Socket.io + Prisma)
+// =========================================================================
 
-// Socket Authentication Middleware
+// 🔐 [AUTH] Socket Authentication Middleware: Xác thực JWT token khi Client kết nối
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) {
@@ -851,30 +853,34 @@ io.use((socket, next) => {
   }
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { userId: number, username: string };
-    socket.data.user = payload;
+    socket.data.user = payload; // Lưu thông tin user vào instance socket
     next();
   } catch (err) {
     next(new Error('Authentication error'));
   }
 });
 
-// Track connected users: userId -> socketId is declared above
-
+// 🌐 Lắng nghe khi có người dùng kết nối Realtime (Socket Connection)
 io.on('connection', (socket) => {
   const user = socket.data.user;
-  console.log(`User connected: ${user.username} (${socket.id})`);
+  console.log(`⚡ User connected: ${user.username} (Socket ID: ${socket.id})`);
   
+  // Lưu mapping userId -> socket.id để biết user này đang kết nối ở socket nào
   connectedUsers.set(user.userId, socket.id);
 
-  // Broadcast to all that a user came online
+  // Thông báo cho tất cả người dùng khác biết user này vừa Online
   io.emit('user_status', { userId: user.userId, status: 'online', isOnline: true });
 
+  // Gửi danh sách các User đang Online cho chính user vừa kết nối
   const onlineUsers = Array.from(connectedUsers.keys());
   socket.emit('initial_online_users', onlineUsers);
 
+  // =======================================================================
+  //  1. [PROCESS & STORE]: Nhận sự kiện nhắn tin từ Client -> Lưu DB -> Phát tin nhắn
+  // =======================================================================
   socket.on('private_message', async ({ receiverId, content }) => {
     try {
-      // Save message to DB
+      //  [STORE]: Lưu tin nhắn vào CSDL MySQL thông qua Prisma Client
       const message = await prisma.message.create({
         data: {
           content,
@@ -883,27 +889,30 @@ io.on('connection', (socket) => {
         }
       });
 
-      // Send to recipient if online
+      // 📡 [RECEIVE - Gửi tới người nhận]: Nếu người nhận đang Online, gửi tin nhắn tới Socket ID của họ
       const receiverSocketId = connectedUsers.get(receiverId);
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('new_message', message);
       }
 
-      // Send back to sender so they can update their UI
+      // 📡 [RECEIVE - Phản hồi người gửi]: Gửi lại tin nhắn cho chính người gửi để cập nhật UI
       socket.emit('new_message', message);
     } catch (error) {
-      console.error('Socket message error:', error);
+      console.error('❌ Lỗi xử lý tin nhắn socket:', error);
     }
   });
 
+  // 🔴 Lắng nghe khi User ngắt kết nối (Disconnect / Đóng trình duyệt)
   socket.on('disconnect', async () => {
-    console.log(`User disconnected: ${user.username}`);
+    console.log(`🔌 User disconnected: ${user.username}`);
     connectedUsers.delete(user.userId);
     const lastSeen = new Date();
     await prisma.user.update({
       where: { id: user.userId },
       data: { lastSeen }
     }).catch(() => {});
+    
+    // Thông báo trạng thái Offline & thời gian lastSeen cho mọi người
     io.emit('user_status', { userId: user.userId, status: 'offline', isOnline: false, lastSeen: lastSeen.toISOString() });
   });
 });
